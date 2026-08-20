@@ -136,6 +136,7 @@ class CapabilityRecorder:
             role=element.role,
             accessible_name=name or None,
             name_match="normalized",
+            name_source="adjacent_label" if by_label else "accessible_name",
             anchors=anchors,
             fallbacks=fallbacks,
             robustness_note=self._robustness_note(element, by_label, anchors),
@@ -214,9 +215,16 @@ class CapabilityRecorder:
         if after is None or not (step.navigated or step.tool in {"click", "press_key"}):
             return None
 
-        marker = _distinguishing_text(after, forbidden)
+        marker, frame = _distinguishing_text(after, forbidden)
         if not marker:
             return None
+
+        # The assertion is scoped to the frame the marker was found in. Without
+        # that, a checkpoint asserting "Member Detail" is satisfied by the
+        # navigation frame's link of the same name -- so it passes on every page
+        # including an error screen, which is worse than having no checkpoint at
+        # all because it reports a broken run as a successful one.
+        scope = [Anchor(kind=AnchorKind.FRAME, value=frame)] if frame else []
 
         return Checkpoint(
             id=f"c{index}",
@@ -226,7 +234,11 @@ class CapabilityRecorder:
                     kind=PredicateKind.TEXT_PRESENT,
                     text=marker,
                     match="contains",
-                    description=f"{marker!r} is on screen",
+                    scope=scope,
+                    description=(
+                        f"{marker!r} is present"
+                        + (f" in {frame}" if frame else " on screen")
+                    ),
                 )
             ],
             timeout_ms=10_000,
@@ -416,7 +428,9 @@ def _looks_like_data(text: str) -> bool:
     return digits / len(stripped) > 0.4
 
 
-def _distinguishing_text(observation: Observation, forbidden: set[str]) -> str:
+def _distinguishing_text(
+    observation: Observation, forbidden: set[str]
+) -> tuple[str, str]:
     """Pick the phrase that best identifies the state we just reached.
 
     Panel titles are the most reliable marker in this class of application: they
@@ -441,14 +455,14 @@ def _distinguishing_text(observation: Observation, forbidden: set[str]) -> str:
         if element.frame_path and element.frame_path[-1] in _CHROME_FRAMES:
             continue
         if usable(element.section or ""):
-            return element.section.strip()
+            return element.section.strip(), "/".join(element.frame_path)
 
     for element in observation.elements:
         if element.frame_path and element.frame_path[-1] in _CHROME_FRAMES:
             continue
         if usable(element.name or ""):
-            return element.name.strip()
-    return ""
+            return element.name.strip(), "/".join(element.frame_path)
+    return "", ""
 
 
 def _load_knowledge(product: str) -> dict[str, Any]:

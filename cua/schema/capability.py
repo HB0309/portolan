@@ -153,6 +153,16 @@ class ElementDescriptor(Strict):
         description="Accessible name as computed by the surface. The primary identifier.",
     )
     name_match: Literal["exact", "normalized", "contains", "regex"] = "normalized"
+    name_source: Literal["accessible_name", "adjacent_label"] = Field(
+        default="accessible_name",
+        description=(
+            "Whether accessible_name is the control's own name or the caption of "
+            "the cell beside it. The distinction is load-bearing for data cells: "
+            "the label 'Current Savings Balance' and the value '$4,102.55' are two "
+            "different elements, and a descriptor that does not say which one it "
+            "means will resolve to the label and read it back as the answer."
+        ),
+    )
     anchors: list[Anchor] = Field(
         default_factory=list,
         description="Scope narrowing applied before matching, outermost first.",

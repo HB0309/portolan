@@ -113,9 +113,13 @@ def _matches_anchor(element: Element, anchor: Anchor) -> bool:
     return True
 
 
-def in_scope(element: Element, descriptor: ElementDescriptor) -> bool:
+def matches_anchors(element: Element, anchors: list[Anchor]) -> bool:
     """Every anchor must hold. Anchors narrow; they do not vote."""
-    return all(_matches_anchor(element, anchor) for anchor in descriptor.anchors)
+    return all(_matches_anchor(element, anchor) for anchor in anchors)
+
+
+def in_scope(element: Element, descriptor: ElementDescriptor) -> bool:
+    return matches_anchors(element, descriptor.anchors)
 
 
 def _name_predicate(descriptor: ElementDescriptor, candidate_name: str) -> bool:
@@ -133,6 +137,27 @@ def _name_predicate(descriptor: ElementDescriptor, candidate_name: str) -> bool:
     return normalize(candidate_name) == normalize(target)
 
 
+def _primary(element: Element, descriptor: ElementDescriptor) -> str:
+    """The string this descriptor considers the element's identity.
+
+    For most controls that is the accessible name. For one identified by
+    adjacency -- a form field with no name, or a data cell whose own text is the
+    value being read -- it is the neighbouring caption. Getting this backwards
+    resolves 'Current Savings Balance' to the label cell and returns the label
+    as the answer, so the descriptor states which it means rather than letting
+    the ladder guess.
+    """
+    if descriptor.name_source == "adjacent_label":
+        return element.label_hint
+    return element.name
+
+
+def _secondary(element: Element, descriptor: ElementDescriptor) -> str:
+    if descriptor.name_source == "adjacent_label":
+        return element.name
+    return element.label_hint
+
+
 def _rung_candidates(
     rung: Rung, descriptor: ElementDescriptor, scoped: list[Element]
 ) -> list[Element]:
@@ -140,20 +165,25 @@ def _rung_candidates(
     want_role = descriptor.role
 
     if rung.number == 1:
-        return [e for e in scoped if e.role == want_role and e.name == target]
+        return [e for e in scoped if e.role == want_role and _primary(e, descriptor) == target]
 
     if rung.number == 2:
         return [
-            e for e in scoped if e.role == want_role and normalize(e.name) == normalize(target)
+            e
+            for e in scoped
+            if e.role == want_role
+            and normalize(_primary(e, descriptor)) == normalize(target)
         ]
 
     if rung.number == 3:
-        # The legacy rung: the control has no accessible name of its own and is
-        # identified by the cell beside it.
+        # The other identifier: a control's own name when it is anchored by
+        # adjacency, or the adjacent caption when it is named. Lower confidence
+        # because it is not what the recording said it meant.
         return [
             e
             for e in scoped
-            if e.role == want_role and normalize(e.label_hint) == normalize(target)
+            if e.role == want_role
+            and normalize(_secondary(e, descriptor)) == normalize(target)
         ]
 
     if rung.number == 4:

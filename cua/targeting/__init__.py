@@ -6,6 +6,7 @@ from cua.targeting.resolver import (
     ResolutionFailureKind,
     ResolvedTarget,
     Rung,
+    matches_anchors,
     normalize,
     resolve,
 )
@@ -16,6 +17,7 @@ __all__ = [
     "ResolutionFailureKind",
     "ResolvedTarget",
     "Rung",
+    "matches_anchors",
     "normalize",
     "resolve",
 ]
