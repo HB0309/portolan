@@ -1,0 +1,46 @@
+{% extends "_chrome.html" %}
+{% block content %}
+<table class="panel" cellpadding="4" cellspacing="0" width="560">
+  <tr><td class="panelhdr" colspan="2">{{ t.open_subaccount_link }}</td></tr>
+  {% if error %}
+  <tr><td colspan="2"><div class="err">{{ error }}</div></td></tr>
+  {% endif %}
+  <tr>
+    <td align="right" width="160"><font size="1">Member</font></td>
+    <td>{{ member.member_id }} &mdash; {{ member.name }}</td>
+  </tr>
+  <tr><td colspan="2">
+    <form method="post" action="/subaccount/new">
+    <input type="hidden" name="member_id" value="{{ member.member_id }}">
+    <table cellpadding="3" cellspacing="0" border="0">
+      <tr>
+        <td align="right" width="150"><font size="1">Account Type</font></td>
+        <td>
+          <select name="account_type" id="{{ gid('sel') }}">
+            <option value="">-- select --</option>
+            {% for ty in types %}<option value="{{ ty }}">{{ ty }}</option>{% endfor %}
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td align="right"><font size="1">Account Nickname</font></td>
+        <td><input type="text" name="nickname" id="{{ gid('txt') }}" size="26"></td>
+      </tr>
+      <tr>
+        <td align="right"><font size="1">Initial Deposit</font></td>
+        <td><input type="text" name="initial_deposit" id="{{ gid('txt') }}" size="12">
+            <font size="1" color="#66707a">&nbsp;minimum $25.00</font></td>
+      </tr>
+      <tr>
+        <td></td>
+        {# The irreversible control. The policy engine classifies this by its
+           caption and refuses to let an unapproved capability activate it
+           unattended. #}
+        <td><input type="submit" id="{{ gid('btn') }}" value="{{ t.subaccount_submit }}">
+            &nbsp;<a href="/member?id={{ member.member_id }}">Cancel</a></td>
+      </tr>
+    </table>
+    </form>
+  </td></tr>
+</table>
+{% endblock %}

@@ -1,0 +1,14 @@
+{#
+  A frameset, because the applications this stands in for still use them. It
+  forces automation to traverse frames rather than assume a single document,
+  which is one of the properties that separates a real legacy surface from a
+  demo site.
+#}
+<html>
+<head><title>{{ t.product_title }}</title></head>
+<frameset cols="170,*" border="1">
+  <frame name="navframe" src="/nav">
+  <frame name="contentframe" src="{{ content_url }}">
+  <noframes><body>This application requires frame support.</body></noframes>
+</frameset>
+</html>

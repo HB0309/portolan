@@ -1,0 +1,13 @@
+{% extends "_chrome.html" %}
+{% block content %}
+<table class="panel" cellpadding="4" cellspacing="0" width="520">
+  <tr><td class="panelhdr">Member Detail</td></tr>
+  <tr><td>
+    <div class="err">
+      <b>Insufficient privileges</b> — your operator role is not permitted to view
+      member {{ member_id }}. Contact an administrator if you require access.
+    </div>
+  </td></tr>
+  <tr><td><a href="/search">Back to Search</a></td></tr>
+</table>
+{% endblock %}

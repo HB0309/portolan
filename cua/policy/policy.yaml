@@ -1,0 +1,97 @@
+# Guardrails enforced by the runtime, not by the prompt.
+#
+# Everything the agent or the replay engine tries to do passes through
+# PolicyEngine.check() before it reaches the surface. A model can be talked out
+# of an instruction in its system prompt; it cannot be talked out of a function
+# that refuses to return an executable action.
+
+allowlist:
+  # Only these origins may be navigated to or acted on. Any other origin is a
+  # POLICY_DENIED failure, in discovery and in replay alike.
+  origins:
+    - "http://127.0.0.1:8080"
+    - "http://localhost:8080"
+
+  # Paths within an allowed origin. Checked with fnmatch against the URL path.
+  path_patterns:
+    - "/"
+    - "/login"
+    - "/logout"
+    - "/nav"
+    - "/search*"
+    - "/member*"
+    - "/subaccount*"
+    - "/static/*"
+
+  # Action types the executor is permitted to perform at all.
+  actions:
+    - navigate
+    - click
+    - type_text
+    - select_option
+    - press_key
+    - extract
+    - wait_for
+
+risk:
+  # An action that activates a control whose accessible name matches one of
+  # these is classified IRREVERSIBLE. The list is intentionally broad: a false
+  # positive costs one human confirmation, a false negative costs a wire
+  # transfer that cannot be undone.
+  irreversible_name_patterns:
+    - "submit"
+    - "confirm"
+    - "transfer"
+    - "delete"
+    - "remove"
+    - "approve"
+    - "authorize"
+    - "post "
+    - "close account"
+    - "open sub-account"
+    - "create sub account"
+    - "send"
+    - "pay"
+
+  # How an irreversible action is handled.
+  #   discovery: always stop and ask a human. The model is exploring; it has no
+  #              standing to commit a real change on a customer's account.
+  #   replay:    permitted only when the step carries approved_risky AND the
+  #              capability's approval state is "approved". A draft capability
+  #              never takes an irreversible action unattended.
+  discovery: escalate
+  replay: require_approval
+
+  # Coordinate-based targeting is off by default. It is the one resolution rung
+  # that cannot survive a tenant re-theming the same vendor product, so using it
+  # is an explicit, logged decision rather than a silent fallback.
+  allow_bbox_fallback: false
+
+redaction:
+  # Patterns scrubbed from every log line, transcript and artifact write.
+  # This is defence in depth, not the primary control: the primary control is
+  # that sensitive values are parameters and parameters are never persisted.
+  patterns:
+    - name: ssn
+      regex: "\\b\\d{3}-\\d{2}-\\d{4}\\b"
+    - name: card
+      regex: "\\b(?:\\d[ -]*?){13,19}\\b"
+    - name: bearer
+      regex: "(?i)bearer\\s+[A-Za-z0-9._~+/-]+=*"
+    - name: api_key
+      regex: "(?i)\\b(sk-[A-Za-z0-9_-]{16,}|sk-ant-[A-Za-z0-9_-]{16,})\\b"
+    - name: password_kv
+      regex: "(?i)(password|passwd|pwd|secret|token)\\s*[=:]\\s*\\S+"
+
+  # Field names whose values are masked in screenshots and never read into logs.
+  sensitive_field_names:
+    - password
+    - ssn
+    - social security
+    - tax id
+    - pin
+
+limits:
+  max_steps: 25
+  wall_clock_seconds: 300
+  max_consecutive_noops: 3

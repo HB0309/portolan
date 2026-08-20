@@ -1,0 +1,35 @@
+{% extends "_chrome.html" %}
+{% block content %}
+<table class="panel" cellpadding="4" cellspacing="0" width="420">
+  <tr><td class="panelhdr" colspan="2">Operator Sign In</td></tr>
+  {% if error %}<tr><td colspan="2"><div class="err">{{ error }}</div></td></tr>{% endif %}
+  {% if request.query_params.get('error') == 'expired' %}
+  <tr><td colspan="2"><div class="warn">Your session has expired. Please sign in again.</div></td></tr>
+  {% endif %}
+  <tr><td colspan="2">
+    <form method="post" action="/login">
+    {# Labels live in the adjacent cell. There is no <label for>, which is how
+       these forms are actually built, and is why targeting has to understand
+       proximity rather than markup. #}
+    <table cellpadding="3" cellspacing="0" border="0">
+      <tr>
+        <td align="right"><font size="1">Operator ID</font></td>
+        <td><input type="text" name="operator_id" id="{{ gid('txt') }}" size="24"></td>
+      </tr>
+      <tr>
+        <td align="right"><font size="1">Password</font></td>
+        <td><input type="password" name="password" id="{{ gid('txt') }}" size="24"></td>
+      </tr>
+      <tr>
+        <td></td>
+        <td><input type="submit" id="{{ gid('btn') }}" value="Sign In"></td>
+      </tr>
+    </table>
+    </form>
+  </td></tr>
+</table>
+<table width="420" cellpadding="4"><tr><td>
+  <font size="1" color="#66707a">Demo application. Any operator ID is accepted; no
+  real credentials are used anywhere in this project.</font>
+</td></tr></table>
+{% endblock %}

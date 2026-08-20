@@ -1,0 +1,25 @@
+{% extends "_chrome.html" %}
+{% block content %}
+<table class="panel" cellpadding="4" cellspacing="0" width="520">
+  <tr><td class="panelhdr">Member Search</td></tr>
+  {% if error %}<tr><td><div class="err">{{ error }}</div></td></tr>{% endif %}
+  <tr><td>
+    <form method="post" action="/search">
+    <table cellpadding="3" cellspacing="0" border="0">
+      <tr>
+        <td align="right"><font size="1">Member Number</font></td>
+        <td><input type="text" name="member_id" id="{{ gid('txt') }}" size="18"></td>
+        <td><input type="submit" id="{{ gid('btn') }}" value="{{ t.search_button }}"></td>
+      </tr>
+      <tr>
+        <td align="right"><font size="1">Last Name</font></td>
+        <td colspan="2"><input type="text" name="last_name" id="{{ gid('txt') }}" size="18"></td>
+      </tr>
+    </table>
+    </form>
+  </td></tr>
+</table>
+<table width="520" cellpadding="4"><tr><td>
+  <font size="1" color="#66707a">Try 10042, 10043, or 10077. Member 10099 is restricted.</font>
+</td></tr></table>
+{% endblock %}

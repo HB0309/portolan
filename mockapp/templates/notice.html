@@ -1,0 +1,20 @@
+{% extends "_chrome.html" %}
+{% block content %}
+{# An interstitial that appears when it feels like it. Recoverable: dismiss and
+   carry on. Automation that does not expect it will act on the wrong page. #}
+<table class="panel" cellpadding="4" cellspacing="0" width="520">
+  <tr><td class="panelhdr">System Notice</td></tr>
+  <tr><td>
+    <div class="warn">
+      Scheduled maintenance is planned for this weekend. Servicing functions
+      remain available.
+    </div>
+  </td></tr>
+  <tr><td>
+    <form method="post" action="/notice/dismiss">
+      <input type="hidden" name="next_url" value="{{ next_url }}">
+      <input type="submit" id="{{ gid('btn') }}" value="Acknowledge">
+    </form>
+  </td></tr>
+</table>
+{% endblock %}

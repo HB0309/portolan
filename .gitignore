@@ -1,0 +1,18 @@
+# secrets
+.env
+*.key
+
+# python
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# playwright
+.playwright/
+playwright-report/
+
+# scratch — curated evidence lives in /evidence/ and IS committed
+scratch/
+*.tmp

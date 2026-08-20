@@ -1,0 +1,15 @@
+{% extends "_chrome.html" %}
+{% block content %}
+{# A legitimate business outcome, not a malfunction. The wording here is what a
+   declared outcome detector matches on. #}
+<table class="panel" cellpadding="4" cellspacing="0" width="520">
+  <tr><td class="panelhdr">Member Search</td></tr>
+  <tr><td>
+    <div class="warn">
+      <b>No member found</b> for member number {{ member_id or '(blank)' }}.
+      Verify the number and try again.
+    </div>
+  </td></tr>
+  <tr><td><a href="/search">Back to Search</a></td></tr>
+</table>
+{% endblock %}
