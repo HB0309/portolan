@@ -1,0 +1,93 @@
+# Product knowledge for the legacy-cu vendor product.
+#
+# Business outcomes and recovery policies are properties of the *application*,
+# not of any one flow recorded against it. "No member found" looks the same
+# whichever capability provoked it, and dismissing the maintenance interstitial
+# is the same action whatever the agent was in the middle of.
+#
+# So they are curated once per vendor product and merged into every capability
+# recorded against it, rather than being re-derived by the model on each run.
+# Two reasons. A model asked to invent an error taxonomy mid-flow will produce a
+# different one every time, and a capability's declared outcomes are part of a
+# contract that callers depend on -- that should be reviewed and stable, not
+# regenerated. And the model only ever sees the paths it happened to walk; it
+# cannot declare an outcome it never encountered, which is exactly the outcome
+# most likely to matter in production.
+#
+# Everything here is reviewable and editable by a human, which is the point.
+
+product: legacy-cu
+
+outcomes:
+  - code: MEMBER_NOT_FOUND
+    description: >-
+      No member exists with the supplied member number. A legitimate answer the
+      caller needs to relay, not a malfunction.
+    detector:
+      kind: text_present
+      text: "No member found"
+      match: contains
+    terminal: true
+
+  - code: PERMISSION_DENIED
+    description: >-
+      The operator role is not permitted to view or service this member. The
+      caller needs to know it was refused, and by whom, rather than being told
+      the automation broke.
+    detector:
+      kind: text_present
+      text: "Insufficient privileges"
+      match: contains
+    terminal: true
+
+  - code: VALIDATION_REJECTED
+    description: >-
+      The application rejected the submitted values. The caller can correct the
+      inputs and retry, which it cannot do if this is reported as a crash.
+    detector:
+      kind: text_present
+      text: "does not meet the minimum"
+      match: contains
+    terminal: true
+
+recovery:
+  - id: dismiss_system_notice
+    description: >-
+      An unscheduled maintenance notice can appear between any two steps.
+      Acknowledging it returns the flow to where it was going.
+    trigger:
+      kind: text_present
+      text: "System Notice"
+      match: contains
+    strategy: dismiss
+    max_attempts: 2
+    target:
+      role: button
+      accessible_name: "Acknowledge"
+      robustness_note: >-
+        The notice is a vendor-standard interstitial and its acknowledge button
+        carries a fixed caption across tenants.
+
+  - id: wait_out_transient_slowness
+    description: >-
+      The application intermittently takes several seconds to render. Waiting is
+      correct; retrying the action would double-submit.
+    trigger:
+      kind: text_absent
+      text: "CoreServ 4.2"
+      match: contains
+    strategy: wait
+    max_attempts: 3
+    wait_ms: 2000
+
+  - id: reauthenticate_after_timeout
+    description: >-
+      Sessions expire on a fixed idle timeout and bounce to the sign-in screen.
+      Re-authenticating and resuming is preferable to failing a run that was
+      otherwise proceeding correctly.
+    trigger:
+      kind: text_present
+      text: "session has expired"
+      match: contains
+    strategy: reauth
+    max_attempts: 1

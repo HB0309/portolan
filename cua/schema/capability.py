@@ -27,6 +27,7 @@ Three design decisions dominate this file:
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Annotated, Any, Literal, Union
@@ -185,31 +186,52 @@ class ElementDescriptor(Strict):
 # ---------------------------------------------------------------------------
 
 
-class ValueRef(Strict):
-    """A value supplied to an action: either a constant or an input reference.
+PARAM_PATTERN = re.compile(r"\{\{param\.([A-Za-z_][A-Za-z0-9_]*)\}\}")
 
-    Constants are things that are genuinely part of the flow (the account type a
-    capability always selects). References are the caller's data. Keeping them
-    distinct is what prevents recorded PII from ending up in a committed
-    artifact -- see the module docstring.
+
+class ValueRef(Strict):
+    """A value supplied to an action.
+
+    Three shapes, and the distinction between them is what keeps regulated data
+    out of a committed artifact:
+
+    ``literal``   a constant genuinely part of the flow -- the account type this
+                  capability always selects, a fixed search mode.
+    ``param``     the whole value is the caller's data.
+    ``template``  the value embeds the caller's data in a fixed shape, which is
+                  what a deep link looks like: ``/member?id={{param.member_id}}``.
+                  Recording the concrete URL would both leak the member number
+                  and pin the capability to one record; canonicalising it into a
+                  pattern is what makes the recording reusable.
     """
 
-    kind: Literal["literal", "param"]
+    kind: Literal["literal", "param", "template"]
     literal: str | None = None
     param: str | None = None
+    template: str | None = None
 
     @model_validator(mode="after")
     def _exactly_one(self) -> ValueRef:
         if self.kind == "literal":
             if self.literal is None:
                 raise ValueError("literal ValueRef requires 'literal'")
-            if self.param is not None:
-                raise ValueError("literal ValueRef must not set 'param'")
-        else:
+            if self.param is not None or self.template is not None:
+                raise ValueError("literal ValueRef must not set 'param' or 'template'")
+        elif self.kind == "param":
             if not self.param:
                 raise ValueError("param ValueRef requires 'param'")
-            if self.literal is not None:
-                raise ValueError("param ValueRef must not set 'literal'")
+            if self.literal is not None or self.template is not None:
+                raise ValueError("param ValueRef must not set 'literal' or 'template'")
+        else:
+            if not self.template:
+                raise ValueError("template ValueRef requires 'template'")
+            if not PARAM_PATTERN.search(self.template):
+                raise ValueError(
+                    "template ValueRef must reference at least one {{param.name}}; "
+                    "use a literal otherwise"
+                )
+            if self.literal is not None or self.param is not None:
+                raise ValueError("template ValueRef must not set 'literal' or 'param'")
         return self
 
     @classmethod
@@ -220,17 +242,41 @@ class ValueRef(Strict):
     def of_param(cls, name: str) -> ValueRef:
         return cls(kind="param", param=name)
 
+    @classmethod
+    def of_template(cls, template: str) -> ValueRef:
+        return cls(kind="template", template=template)
+
+    def referenced_params(self) -> set[str]:
+        if self.kind == "param" and self.param:
+            return {self.param}
+        if self.kind == "template" and self.template:
+            return set(PARAM_PATTERN.findall(self.template))
+        return set()
+
     def render(self, inputs: dict[str, Any]) -> str:
         """Resolve to a concrete string for execution."""
         if self.kind == "literal":
             return self.literal or ""
-        if self.param not in inputs:
-            raise KeyError(f"missing required input {self.param!r}")
-        return str(inputs[self.param])
+        if self.kind == "param":
+            if self.param not in inputs:
+                raise KeyError(f"missing required input {self.param!r}")
+            return str(inputs[self.param])
+
+        def substitute(match: re.Match[str]) -> str:
+            name = match.group(1)
+            if name not in inputs:
+                raise KeyError(f"missing required input {name!r}")
+            return str(inputs[name])
+
+        return PARAM_PATTERN.sub(substitute, self.template or "")
 
     def display(self) -> str:
         """Log-safe rendering. Never resolves a parameter to its value."""
-        return self.literal or "" if self.kind == "literal" else f"{{{{param.{self.param}}}}}"
+        if self.kind == "literal":
+            return self.literal or ""
+        if self.kind == "param":
+            return f"{{{{param.{self.param}}}}}"
+        return self.template or ""
 
 
 # ---------------------------------------------------------------------------
@@ -595,10 +641,11 @@ class Capability(Strict):
 
         for step in self.steps:
             for ref in _value_refs(step.action):
-                if ref.kind == "param" and ref.param not in param_names:
-                    raise ValueError(
-                        f"step {step.id!r} references undeclared input {ref.param!r}"
-                    )
+                for referenced in ref.referenced_params():
+                    if referenced not in param_names:
+                        raise ValueError(
+                            f"step {step.id!r} references undeclared input {referenced!r}"
+                        )
             if isinstance(step.action, ExtractAction) and step.action.output not in output_names:
                 raise ValueError(
                     f"step {step.id!r} extracts into undeclared output {step.action.output!r}"
