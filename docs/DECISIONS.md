@@ -226,3 +226,146 @@ already tried.
 
 **Cost.** The agent cannot re-examine an old page in detail. In practice it does
 not need to; when it does, it can navigate back and observe again.
+
+---
+
+## D13 — Descriptors state whether their name is the control's own or the label beside it
+
+**Decision.** `ElementDescriptor.name_source` is either `accessible_name` or
+`adjacent_label`, and the resolution ladder matches against whichever the
+descriptor names.
+
+**Why.** This was added after watching a replay return the string
+"Current Savings Balance" as a member's savings balance. The label cell and the
+value cell are two different elements: the label's accessible name is
+"Current Savings Balance" and the value's is "$4,102.55". A descriptor saying
+only `cell "Current Savings Balance"` matches the label first, at the highest
+rung, and reads it back as the answer.
+
+The related half of the same problem is that recording the value cell by its own
+text produces `cell "$4,102.55"`, which resolves for exactly one member. That is
+the worst failure shape available here — a capability parameterised in its
+inputs and hard-coded in its aim, which passes every test run against the record
+it was recorded from.
+
+**Cost.** One more field to get right at record time, and a resolver that has to
+consult it. Both are cheap next to the failure it prevents.
+
+---
+
+## D14 — Checkpoints are scoped to the frame their marker was observed in
+
+**Decision.** A generated checkpoint asserts its marker within a frame, not
+across the whole screen.
+
+**Why.** Also found by running it. The navigation frame in this application
+carries a "Member Detail" link on every page, so the unscoped assertion
+"'Member Detail' is present" passed on the application-error screen — the run
+had visibly failed and the checkpoint reported success. A checkpoint that passes
+everywhere is worse than no checkpoint, because it converts a broken run into a
+reported-good one, which is precisely the thing checkpoints exist to catch.
+
+**Cost.** The marker's frame has to be captured at record time and the predicate
+evaluator has to support scoping. The scoping mechanism was already needed for
+element anchoring, so this was reuse rather than new machinery.
+
+---
+
+## D15 — Recovery after an action does not re-run the action
+
+**Decision.** Pre-action recovery re-observes and retries the step. Post-action
+recovery clears the condition, re-observes, and re-evaluates the checkpoint
+*without* repeating the step.
+
+**Why.** An interstitial that appears on the way to the next screen is not a
+reason to click Search again — and on a submit it would be a double posting,
+which in this domain means a duplicate transaction. The visible symptom was
+milder: after dismissing the notice, replay went looking for the Search button
+on a page that had already moved past it.
+
+**Cost.** Two recovery paths instead of one. The distinction is real, though —
+"the action has not happened yet" and "the action has happened" genuinely call
+for different responses.
+
+---
+
+## D16 — Reversibility needs two signals, not one
+
+**Decision.** An action is irreversible only when the control can commit (a
+button, not a link) *and* its name matches a committing verb.
+
+**Why.** The name pattern alone fired on the link captioned "Open Sub-Account",
+which merely opens the form, and stopped the agent before it could reach the
+screen it needed. Requiring the role as well keeps the classifier from tripping
+on every link with a verb in it, without weakening the case that matters.
+
+**Cost.** An application that uses `<a>` for genuinely committing actions would
+slip through. Named as a limit in REPORT §6 rather than papered over; the fix
+would be to treat any control inside a form's submit path as committing,
+regardless of tag.
+
+---
+
+## D17 — The recorded step says whether it expects a navigation
+
+**Decision.** `WaitSpec.await_navigation` is captured during discovery and used
+by replay to arm a navigation waiter *before* the click.
+
+**Why.** Found by injecting a slow server response. Immediately after a click the
+frame still holds the old, fully loaded document, so every "is it loaded yet"
+check — `wait_for_load_state`, and even `networkidle`, which sees no in-flight
+request because the click has not issued one yet — is satisfied by the page we
+just clicked away from. The next observation then asserts against the previous
+screen, and a page that was merely still arriving is reported as a checkpoint
+violation.
+
+The waiter has to be armed first, which means knowing in advance whether to
+expect a navigation. Guessing costs either the full navigation budget after
+every click that does not navigate, or a race on the ones that do. The recording
+already knows, because the discovery run watched it happen.
+
+**Cost.** A step recorded as navigating that does not navigate this time — a
+validation error keeping us on the page — waits out its budget. That is
+acceptable: it is a real state the caller needs to see, and the observation
+reports it rather than the wait swallowing it.
+
+**Related bug.** Navigation detection during discovery originally compared only
+the top-level URL, which never changes when a child frame navigates — so every
+step in a frameset application recorded `await_navigation: false`. Detection now
+compares the acting frame's URL as well.
+
+---
+
+## D18 — The surface settles before automation resumes from a handoff
+
+**Decision.** `Surface.settle()` is called after an escalation resolves with
+anything other than abort, before automation observes again.
+
+**Why.** An operator who performs the action and immediately clicks resume
+leaves a navigation in flight. Automation then observes a half-rendered page,
+correctly refuses to act on it, and escalates a second time — over a screen that
+was merely still arriving. In an attended run that is a confusing double
+interruption; in a run where the operator has since walked away, it is a stall.
+
+Found while testing the handoff end to end rather than by reading the code, which
+is the argument for testing that path against a real browser rather than
+asserting the state machine in isolation.
+
+**Cost.** One more method on the surface interface, defaulting to a no-op so a
+surface with nothing in flight is unaffected.
+
+---
+
+## D19 — The catalog serves one version per capability, approved first
+
+**Decision.** `CapabilityCatalog` deduplicates by `capability_id`, preferring
+`approved` over `draft` and then the higher version.
+
+**Why.** A freshly recorded draft and the reviewed version that supersedes it
+legitimately sit side by side. Listing both means an agent asking for the
+capability by name gets whichever sorted first by filename — so a review could
+be bypassed by naming, which defeats the point of having an approval state at
+all.
+
+**Cost.** Older versions are not directly callable through the catalog. That is
+the intent; they remain on disk and can be replayed by path for debugging.

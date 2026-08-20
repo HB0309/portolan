@@ -197,6 +197,9 @@ class WebSurface(Surface):
     async def current_url(self) -> str:
         return self._page.url
 
+    async def settle(self) -> None:
+        await self._settle()
+
     # -- action ----------------------------------------------------------
 
     async def _locate(self, element_ref: str):
@@ -220,10 +223,11 @@ class WebSurface(Surface):
                 f"({len(frames)} frames on the page); re-observe before acting"
             )
 
-        locator = frames[frame_index][1].locator(f"[data-cua-ref='{local_ref}']")
+        frame = frames[frame_index][1]
+        locator = frame.locator(f"[data-cua-ref='{local_ref}']")
         if await locator.count() == 0:
             raise SurfaceError(f"element {element_ref} is no longer on the page")
-        return locator.first
+        return locator.first, frame
 
     async def act(self, request: ActionRequest) -> ActionOutcome:
         self._assert_control(request.type)
@@ -252,14 +256,11 @@ class WebSurface(Surface):
         if request.ref is None:
             raise SurfaceError(f"{request.type} requires an element reference")
 
-        locator = await self._locate(request.ref)
+        locator, frame = await self._locate(request.ref)
 
         if request.type == "click":
-            before = self._page.url
-            await locator.click(timeout=8000)
-            await self._settle()
-            return ActionOutcome(
-                ok=True, detail="clicked", navigated=self._page.url != before
+            return await self._click_like(
+                request, lambda: locator.click(timeout=8000), frame, "clicked"
             )
 
         if request.type == "type_text":
@@ -271,11 +272,11 @@ class WebSurface(Surface):
             return ActionOutcome(ok=True, detail="selected")
 
         if request.type == "press_key":
-            before = self._page.url
-            await locator.press(request.key or "Enter", timeout=8000)
-            await self._settle()
-            return ActionOutcome(
-                ok=True, detail=f"pressed {request.key}", navigated=self._page.url != before
+            return await self._click_like(
+                request,
+                lambda: locator.press(request.key or "Enter", timeout=8000),
+                frame,
+                f"pressed {request.key}",
             )
 
         if request.type == "extract":
@@ -286,6 +287,43 @@ class WebSurface(Surface):
 
         raise SurfaceError(f"unsupported action {request.type!r}")
 
+    async def _click_like(self, request: ActionRequest, do, frame: Frame, detail: str):
+        """Perform an action that may navigate, and wait for it correctly.
+
+        The waiter has to be armed *before* the action. Immediately after a click
+        the frame still holds the old, fully loaded document, so anything that
+        asks "is it loaded yet" is answered by the page we just clicked away
+        from — and the next observation asserts against the previous screen. On a
+        slow server that surfaces as a checkpoint violation for a page that was
+        merely still on its way.
+
+        Whether to expect a navigation comes from the recorded step, which knows
+        because the discovery run watched it happen. Guessing instead would mean
+        either waiting the full navigation budget after every click that does not
+        navigate, or racing the ones that do.
+        """
+        before = self._page.url
+        before_frame = frame.url
+
+        if request.expect_navigation:
+            try:
+                async with frame.expect_navigation(
+                    timeout=request.navigation_timeout_ms, wait_until="load"
+                ):
+                    await do()
+            except PlaywrightError:
+                # The step was recorded as navigating but did not this time --
+                # a validation error kept us on the page, say. That is a real
+                # state the caller needs to see, so it is reported by the
+                # observation rather than raised here.
+                pass
+        else:
+            await do()
+
+        await self._settle()
+        navigated = self._page.url != before or frame.url != before_frame
+        return ActionOutcome(ok=True, detail=detail, navigated=navigated)
+
     async def _is_input(self, locator) -> bool:
         try:
             tag = await locator.evaluate("el => el.tagName.toLowerCase()")
@@ -293,17 +331,39 @@ class WebSurface(Surface):
         except PlaywrightError:
             return False
 
-    async def _settle(self, quiet_ms: int = 250) -> None:
-        """Let a full page load finish before the next observation.
+    async def _settle(self, quiet_ms: int = 250, timeout_ms: int = 15_000) -> None:
+        """Let a navigation finish before the next observation.
 
-        These applications navigate on every interaction, so the useful signal is
-        the load event rather than network idle. A short quiet period afterwards
-        absorbs the frameset's child loads.
+        Two things make this harder than it looks on a frameset application.
+
+        Waiting on the *page* is not enough: clicking a control in the content
+        frame navigates that frame while the top-level frameset document stays
+        loaded, so `page.wait_for_load_state("load")` is satisfied by a document
+        that never changed.
+
+        And waiting on the frame is not enough either, because immediately after
+        a click the new request has not been issued yet -- the frame still holds
+        the *old*, fully loaded document, so the wait returns instantly and the
+        next observation sees the page we just clicked away from. That is what
+        turned a slow response into a checkpoint violation: the automation was
+        asserting against the previous screen.
+
+        So the wait is for network quiet first, which is what actually tracks the
+        in-flight navigation, and only then for each frame's load state.
         """
         try:
-            await self._page.wait_for_load_state("load", timeout=8000)
+            await self._page.wait_for_load_state("networkidle", timeout=timeout_ms)
         except PlaywrightError:
+            # networkidle can time out on a page that polls. The per-frame wait
+            # below still applies, and the observation reports what is there.
             pass
+
+        for frame in list(self._page.frames):
+            try:
+                await frame.wait_for_load_state("load", timeout=timeout_ms)
+            except PlaywrightError:
+                continue
+
         await self._page.wait_for_timeout(quiet_ms)
 
     # -- evidence --------------------------------------------------------
@@ -313,7 +373,8 @@ class WebSurface(Surface):
         masks = []
         for ref in mask_refs or []:
             try:
-                masks.append(await self._locate(ref))
+                located, _ = await self._locate(ref)
+                masks.append(located)
             except SurfaceError:
                 continue
         try:

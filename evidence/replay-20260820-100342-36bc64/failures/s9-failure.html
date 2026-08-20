@@ -1,0 +1,95 @@
+<!-- frame: main url: http://127.0.0.1:8080/ -->
+<html><head><title>CoreServ Member Servicing</title></head>
+<frameset cols="170,*" border="1">
+  <frame name="navframe" src="/nav">
+  <frame name="contentframe" src="/login">
+  <noframes><body>This application requires frame support.</body></noframes>
+</frameset>
+</html>
+
+<!-- frame: navframe url: http://127.0.0.1:8080/nav -->
+<html><head><style>
+  body { font-family: Verdana; font-size: 11px; background: #eef1f4; margin: 0; }
+  td { font-size: 11px; padding: 4px 8px; }
+  a { color: #1b3a5c; text-decoration: none; }
+</style></head>
+<body>
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tbody><tr><td style="background: #1b3a5c; color: #fff;" data-cua-ref="e0"><b>Servicing</b></td></tr>
+  <tr><td><a href="/search" target="contentframe" data-cua-ref="e1">Member Search</a></td></tr>
+  <tr><td><a href="/member" target="contentframe" data-cua-ref="e2">Member Detail</a></td></tr>
+  <tr><td><a href="/logout" target="_top" data-cua-ref="e3">Sign Out</a></td></tr>
+</tbody></table>
+
+</body></html>
+
+<!-- frame: contentframe url: http://127.0.0.1:8080/subaccount/new?member=10043 -->
+<html><head>
+  <title>CoreServ Member Servicing</title>
+  <style>
+    body { font-family: Verdana, Arial, sans-serif; font-size: 11px; margin: 0; background: #dfe3e8; }
+    td { font-size: 11px; }
+    .hdr { background: #1b3a5c; color: #ffffff; padding: 6px 10px; }
+    .panel { background: #ffffff; border: 1px solid #9aa5b1; margin: 8px; }
+    .panelhdr { background: #c3ccd6; padding: 3px 6px; font-weight: bold; }
+    .err { background: #ffe8e8; border: 1px solid #cc0000; color: #a00000; padding: 5px; }
+    .warn { background: #fff8dd; border: 1px solid #c8a300; padding: 5px; }
+    input[type=text], input[type=password], select { font-family: Verdana; font-size: 11px; }
+  </style>
+</head>
+<body>
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tbody><tr><td class="hdr" data-cua-ref="e0">
+    <font size="2"><b>Riverbend Credit Union</b></font>
+    &nbsp;&nbsp;<font size="1">CoreServ Member Servicing</font>
+  </td></tr>
+</tbody></table>
+
+<table class="panel" cellpadding="4" cellspacing="0" width="560">
+  <tbody><tr><td class="panelhdr" colspan="2" data-cua-ref="e1">Open Sub-Account</td></tr>
+  
+  <tr>
+    <td align="right" width="160" data-cua-ref="e2"><font size="1">Member</font></td>
+    <td data-cua-ref="e3">10043 — Marcus Oyelaran</td>
+  </tr>
+  <tr><td colspan="2">
+    <form method="post" action="/subaccount/new">
+    <input type="hidden" name="member_id" value="10043" style="">
+    <table cellpadding="3" cellspacing="0" border="0">
+      <tbody><tr>
+        <td align="right" width="150" data-cua-ref="e4"><font size="1">Account Type</font></td>
+        <td>
+          <select name="account_type" id="ctl00_wpz_ctl33_sel36" data-cua-ref="e5">
+            <option value="">-- select --</option>
+            <option value="Savings">Savings</option><option value="Checking">Checking</option><option value="Holiday Club">Holiday Club</option><option value="Vacation Club">Vacation Club</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td align="right" data-cua-ref="e6"><font size="1">Account Nickname</font></td>
+        <td><input type="text" name="nickname" id="ctl00_wpz_ctl84_txt40" size="26" style="" data-cua-ref="e7"></td>
+      </tr>
+      <tr>
+        <td align="right" data-cua-ref="e8"><font size="1">Initial Deposit</font></td>
+        <td><input type="text" name="initial_deposit" id="ctl00_wpz_ctl80_txt60" size="12" style="" data-cua-ref="e9">
+            <font size="1" color="#66707a">&nbsp;minimum $25.00</font></td>
+      </tr>
+      <tr>
+        <td></td>
+        
+        <td><input type="submit" id="ctl00_wpz_ctl27_btn99" value="Open Sub-Account" data-cua-ref="e10" style="">
+            &nbsp;<a href="/member?id=10043" data-cua-ref="e11">Cancel</a></td>
+      </tr>
+    </tbody></table>
+    </form>
+  </td></tr>
+</tbody></table>
+
+<table width="100%" cellpadding="2" cellspacing="0" border="0">
+  <tbody><tr><td align="center" data-cua-ref="e12"><font size="1" color="#66707a">
+    CoreServ 4.2 &nbsp;|&nbsp; Session svc01
+    
+  </font></td></tr>
+</tbody></table>
+
+</body></html>

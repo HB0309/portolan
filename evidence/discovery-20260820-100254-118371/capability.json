@@ -1,0 +1,831 @@
+{
+  "schema_version": "1.0",
+  "capability_id": "cu.member.open_subaccount",
+  "version": 1,
+  "name": "Open a member sub-account",
+  "description": "Open a new sub-account for a member and return the confirmation reference.",
+  "surface": {
+    "kind": "web",
+    "entry_point": "http://127.0.0.1:8080/",
+    "product": "legacy-cu",
+    "product_version": null
+  },
+  "inputs": [
+    {
+      "name": "member_id",
+      "type": "string",
+      "description": "Value supplied for member_id.",
+      "required": true,
+      "sensitive": false,
+      "enum_values": null,
+      "example": "[REDACTED]"
+    },
+    {
+      "name": "account_type",
+      "type": "string",
+      "description": "Value supplied for account_type.",
+      "required": true,
+      "sensitive": false,
+      "enum_values": null,
+      "example": "[REDACTED]"
+    },
+    {
+      "name": "nickname",
+      "type": "string",
+      "description": "Value supplied for nickname.",
+      "required": true,
+      "sensitive": false,
+      "enum_values": null,
+      "example": "[REDACTED]"
+    },
+    {
+      "name": "initial_deposit",
+      "type": "string",
+      "description": "Value supplied for initial_deposit.",
+      "required": true,
+      "sensitive": false,
+      "enum_values": null,
+      "example": "500"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "reference_number",
+      "type": "string",
+      "description": "Reference number as displayed by the application.",
+      "produced_by_step": "s10",
+      "sensitive": false
+    }
+  ],
+  "steps": [
+    {
+      "id": "s1",
+      "intent": "Sign in before servicing functions become available.",
+      "action": {
+        "type": "type_text",
+        "value": {
+          "kind": "literal",
+          "literal": "svc01",
+          "param": null,
+          "template": null
+        },
+        "clear_first": true
+      },
+      "target": {
+        "role": "textbox",
+        "accessible_name": "Operator ID",
+        "name_match": "normalized",
+        "name_source": "adjacent_label",
+        "anchors": [
+          {
+            "kind": "frame",
+            "value": "contentframe"
+          },
+          {
+            "kind": "heading",
+            "value": "Operator Sign In"
+          }
+        ],
+        "ordinal": null,
+        "fallbacks": [
+          {
+            "kind": "bbox",
+            "value": "",
+            "bbox": {
+              "x": 81.875,
+              "y": 63.0,
+              "width": 192.0,
+              "height": 19.0
+            }
+          }
+        ],
+        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Operator ID', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > Operator Sign In to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "recorded_confidence": 0.8
+      },
+      "wait": {
+        "settle_ms": 250,
+        "timeout_ms": 10000,
+        "await_navigation": false,
+        "until": null
+      },
+      "checkpoint": null,
+      "recovery_ids": [
+        "dismiss_system_notice",
+        "wait_out_transient_slowness",
+        "reauthenticate_after_timeout"
+      ],
+      "risk": "safe",
+      "min_confidence": 0.7,
+      "approved_risky": false
+    },
+    {
+      "id": "s2",
+      "intent": "Sign in.",
+      "action": {
+        "type": "click"
+      },
+      "target": {
+        "role": "button",
+        "accessible_name": "Sign In",
+        "name_match": "normalized",
+        "name_source": "accessible_name",
+        "anchors": [
+          {
+            "kind": "frame",
+            "value": "contentframe"
+          },
+          {
+            "kind": "heading",
+            "value": "Operator Sign In"
+          }
+        ],
+        "ordinal": null,
+        "fallbacks": [
+          {
+            "kind": "bbox",
+            "value": "",
+            "bbox": {
+              "x": 81.875,
+              "y": 113.0,
+              "width": 57.5,
+              "height": 21.0
+            }
+          }
+        ],
+        "robustness_note": "Matched on role plus the accessible name 'Sign In', which is vendor-supplied and survives tenant re-branding of layout and styling. Anchored to contentframe > Operator Sign In to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "recorded_confidence": 1.0
+      },
+      "wait": {
+        "settle_ms": 250,
+        "timeout_ms": 10000,
+        "await_navigation": true,
+        "until": null
+      },
+      "checkpoint": {
+        "id": "c2",
+        "description": "Reached the 'Member Search' state.",
+        "assertions": [
+          {
+            "kind": "text_present",
+            "text": "Member Search",
+            "match": "contains",
+            "target": null,
+            "scope": [
+              {
+                "kind": "frame",
+                "value": "contentframe"
+              }
+            ],
+            "description": "'Member Search' is present in contentframe"
+          }
+        ],
+        "timeout_ms": 10000
+      },
+      "recovery_ids": [
+        "dismiss_system_notice",
+        "wait_out_transient_slowness",
+        "reauthenticate_after_timeout"
+      ],
+      "risk": "safe",
+      "min_confidence": 0.7,
+      "approved_risky": false
+    },
+    {
+      "id": "s3",
+      "intent": "Look up the member the sub-account is being opened for.",
+      "action": {
+        "type": "type_text",
+        "value": {
+          "kind": "param",
+          "literal": null,
+          "param": "member_id",
+          "template": null
+        },
+        "clear_first": true
+      },
+      "target": {
+        "role": "textbox",
+        "accessible_name": "Member Number",
+        "name_match": "normalized",
+        "name_source": "adjacent_label",
+        "anchors": [
+          {
+            "kind": "frame",
+            "value": "contentframe"
+          },
+          {
+            "kind": "heading",
+            "value": "Member Search"
+          }
+        ],
+        "ordinal": null,
+        "fallbacks": [
+          {
+            "kind": "bbox",
+            "value": "",
+            "bbox": {
+              "x": 106.078125,
+              "y": 64.0,
+              "width": 150.0,
+              "height": 19.0
+            }
+          }
+        ],
+        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Member Number', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > Member Search to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "recorded_confidence": 0.8
+      },
+      "wait": {
+        "settle_ms": 250,
+        "timeout_ms": 10000,
+        "await_navigation": false,
+        "until": null
+      },
+      "checkpoint": null,
+      "recovery_ids": [
+        "dismiss_system_notice",
+        "wait_out_transient_slowness",
+        "reauthenticate_after_timeout"
+      ],
+      "risk": "safe",
+      "min_confidence": 0.7,
+      "approved_risky": false
+    },
+    {
+      "id": "s4",
+      "intent": "Run the search.",
+      "action": {
+        "type": "click"
+      },
+      "target": {
+        "role": "button",
+        "accessible_name": "Search",
+        "name_match": "normalized",
+        "name_source": "accessible_name",
+        "anchors": [
+          {
+            "kind": "frame",
+            "value": "contentframe"
+          },
+          {
+            "kind": "heading",
+            "value": "Member Search"
+          }
+        ],
+        "ordinal": null,
+        "fallbacks": [
+          {
+            "kind": "bbox",
+            "value": "",
+            "bbox": {
+              "x": 262.078125,
+              "y": 63.0,
+              "width": 58.25,
+              "height": 21.0
+            }
+          }
+        ],
+        "robustness_note": "Matched on role plus the accessible name 'Search', which is vendor-supplied and survives tenant re-branding of layout and styling. Anchored to contentframe > Member Search to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "recorded_confidence": 1.0
+      },
+      "wait": {
+        "settle_ms": 250,
+        "timeout_ms": 10000,
+        "await_navigation": true,
+        "until": null
+      },
+      "checkpoint": {
+        "id": "c4",
+        "description": "Reached the 'Member Detail' state.",
+        "assertions": [
+          {
+            "kind": "text_present",
+            "text": "Member Detail",
+            "match": "contains",
+            "target": null,
+            "scope": [
+              {
+                "kind": "frame",
+                "value": "contentframe"
+              }
+            ],
+            "description": "'Member Detail' is present in contentframe"
+          }
+        ],
+        "timeout_ms": 10000
+      },
+      "recovery_ids": [
+        "dismiss_system_notice",
+        "wait_out_transient_slowness",
+        "reauthenticate_after_timeout"
+      ],
+      "risk": "safe",
+      "min_confidence": 0.7,
+      "approved_risky": false
+    },
+    {
+      "id": "s5",
+      "intent": "Open the sub-account form from the member detail screen.",
+      "action": {
+        "type": "click"
+      },
+      "target": {
+        "role": "link",
+        "accessible_name": "Open Sub-Account",
+        "name_match": "normalized",
+        "name_source": "accessible_name",
+        "anchors": [
+          {
+            "kind": "frame",
+            "value": "contentframe"
+          }
+        ],
+        "ordinal": null,
+        "fallbacks": [
+          {
+            "kind": "bbox",
+            "value": "",
+            "bbox": {
+              "x": 6.0,
+              "y": 318.0,
+              "width": 102.875,
+              "height": 13.0
+            }
+          }
+        ],
+        "robustness_note": "Matched on role plus the accessible name 'Open Sub-Account', which is vendor-supplied and survives tenant re-branding of layout and styling. Anchored to contentframe to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "recorded_confidence": 1.0
+      },
+      "wait": {
+        "settle_ms": 250,
+        "timeout_ms": 10000,
+        "await_navigation": true,
+        "until": null
+      },
+      "checkpoint": {
+        "id": "c5",
+        "description": "Reached the 'Open Sub-Account' state.",
+        "assertions": [
+          {
+            "kind": "text_present",
+            "text": "Open Sub-Account",
+            "match": "contains",
+            "target": null,
+            "scope": [
+              {
+                "kind": "frame",
+                "value": "contentframe"
+              }
+            ],
+            "description": "'Open Sub-Account' is present in contentframe"
+          }
+        ],
+        "timeout_ms": 10000
+      },
+      "recovery_ids": [
+        "dismiss_system_notice",
+        "wait_out_transient_slowness",
+        "reauthenticate_after_timeout"
+      ],
+      "risk": "safe",
+      "min_confidence": 0.7,
+      "approved_risky": false
+    },
+    {
+      "id": "s6",
+      "intent": "Select the account type the caller asked for.",
+      "action": {
+        "type": "select_option",
+        "value": {
+          "kind": "param",
+          "literal": null,
+          "param": "account_type",
+          "template": null
+        }
+      },
+      "target": {
+        "role": "combobox",
+        "accessible_name": "Account Type",
+        "name_match": "normalized",
+        "name_source": "adjacent_label",
+        "anchors": [
+          {
+            "kind": "frame",
+            "value": "contentframe"
+          },
+          {
+            "kind": "heading",
+            "value": "Open Sub-Account"
+          }
+        ],
+        "ordinal": null,
+        "fallbacks": [
+          {
+            "kind": "bbox",
+            "value": "",
+            "bbox": {
+              "x": 172.0,
+              "y": 84.0,
+              "width": 98.0,
+              "height": 17.0
+            }
+          }
+        ],
+        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Account Type', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > Open Sub-Account to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "recorded_confidence": 0.8
+      },
+      "wait": {
+        "settle_ms": 250,
+        "timeout_ms": 10000,
+        "await_navigation": false,
+        "until": null
+      },
+      "checkpoint": null,
+      "recovery_ids": [
+        "dismiss_system_notice",
+        "wait_out_transient_slowness",
+        "reauthenticate_after_timeout"
+      ],
+      "risk": "safe",
+      "min_confidence": 0.7,
+      "approved_risky": false
+    },
+    {
+      "id": "s7",
+      "intent": "Name the account so it is identifiable on the member's profile.",
+      "action": {
+        "type": "type_text",
+        "value": {
+          "kind": "param",
+          "literal": null,
+          "param": "nickname",
+          "template": null
+        },
+        "clear_first": true
+      },
+      "target": {
+        "role": "textbox",
+        "accessible_name": "Account Nickname",
+        "name_match": "normalized",
+        "name_source": "adjacent_label",
+        "anchors": [
+          {
+            "kind": "frame",
+            "value": "contentframe"
+          },
+          {
+            "kind": "heading",
+            "value": "Open Sub-Account"
+          }
+        ],
+        "ordinal": null,
+        "fallbacks": [
+          {
+            "kind": "bbox",
+            "value": "",
+            "bbox": {
+              "x": 172.0,
+              "y": 107.0,
+              "width": 206.0,
+              "height": 19.0
+            }
+          }
+        ],
+        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Account Nickname', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > Open Sub-Account to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "recorded_confidence": 0.8
+      },
+      "wait": {
+        "settle_ms": 250,
+        "timeout_ms": 10000,
+        "await_navigation": false,
+        "until": null
+      },
+      "checkpoint": null,
+      "recovery_ids": [
+        "dismiss_system_notice",
+        "wait_out_transient_slowness",
+        "reauthenticate_after_timeout"
+      ],
+      "risk": "safe",
+      "min_confidence": 0.7,
+      "approved_risky": false
+    },
+    {
+      "id": "s8",
+      "intent": "Fund the account with the opening deposit.",
+      "action": {
+        "type": "type_text",
+        "value": {
+          "kind": "param",
+          "literal": null,
+          "param": "initial_deposit",
+          "template": null
+        },
+        "clear_first": true
+      },
+      "target": {
+        "role": "textbox",
+        "accessible_name": "Initial Deposit",
+        "name_match": "normalized",
+        "name_source": "adjacent_label",
+        "anchors": [
+          {
+            "kind": "frame",
+            "value": "contentframe"
+          },
+          {
+            "kind": "heading",
+            "value": "Open Sub-Account"
+          }
+        ],
+        "ordinal": null,
+        "fallbacks": [
+          {
+            "kind": "bbox",
+            "value": "",
+            "bbox": {
+              "x": 172.0,
+              "y": 132.0,
+              "width": 108.0,
+              "height": 19.0
+            }
+          }
+        ],
+        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Initial Deposit', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > Open Sub-Account to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "recorded_confidence": 0.8
+      },
+      "wait": {
+        "settle_ms": 250,
+        "timeout_ms": 10000,
+        "await_navigation": false,
+        "until": null
+      },
+      "checkpoint": null,
+      "recovery_ids": [
+        "dismiss_system_notice",
+        "wait_out_transient_slowness",
+        "reauthenticate_after_timeout"
+      ],
+      "risk": "safe",
+      "min_confidence": 0.7,
+      "approved_risky": false
+    },
+    {
+      "id": "s9",
+      "intent": "Submit the form to open the sub-account and reach the confirmation screen.",
+      "action": {
+        "type": "click"
+      },
+      "target": {
+        "role": "button",
+        "accessible_name": "Open Sub-Account",
+        "name_match": "normalized",
+        "name_source": "accessible_name",
+        "anchors": [
+          {
+            "kind": "frame",
+            "value": "contentframe"
+          },
+          {
+            "kind": "heading",
+            "value": "Open Sub-Account"
+          }
+        ],
+        "ordinal": null,
+        "fallbacks": [
+          {
+            "kind": "bbox",
+            "value": "",
+            "bbox": {
+              "x": 172.0,
+              "y": 157.0,
+              "width": 128.640625,
+              "height": 21.0
+            }
+          }
+        ],
+        "robustness_note": "Matched on role plus the accessible name 'Open Sub-Account', which is vendor-supplied and survives tenant re-branding of layout and styling. Anchored to contentframe > Open Sub-Account to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "recorded_confidence": 1.0
+      },
+      "wait": {
+        "settle_ms": 250,
+        "timeout_ms": 10000,
+        "await_navigation": true,
+        "until": null
+      },
+      "checkpoint": {
+        "id": "c9",
+        "description": "Reached the 'Sub-Account Opened' state.",
+        "assertions": [
+          {
+            "kind": "text_present",
+            "text": "Sub-Account Opened",
+            "match": "contains",
+            "target": null,
+            "scope": [
+              {
+                "kind": "frame",
+                "value": "contentframe"
+              }
+            ],
+            "description": "'Sub-Account Opened' is present in contentframe"
+          }
+        ],
+        "timeout_ms": 10000
+      },
+      "recovery_ids": [
+        "dismiss_system_notice",
+        "wait_out_transient_slowness",
+        "reauthenticate_after_timeout"
+      ],
+      "risk": "irreversible",
+      "min_confidence": 0.7,
+      "approved_risky": false
+    },
+    {
+      "id": "s10",
+      "intent": "The confirmation screen carries the reference number the caller needs.",
+      "action": {
+        "type": "extract",
+        "output": "reference_number",
+        "source": "text",
+        "attribute": null,
+        "pattern": null
+      },
+      "target": {
+        "role": "cell",
+        "accessible_name": "Reference Number",
+        "name_match": "normalized",
+        "name_source": "adjacent_label",
+        "anchors": [
+          {
+            "kind": "frame",
+            "value": "contentframe"
+          },
+          {
+            "kind": "heading",
+            "value": "Sub-Account Opened"
+          }
+        ],
+        "ordinal": null,
+        "fallbacks": [
+          {
+            "kind": "text",
+            "value": "Reference Number SA-219003",
+            "bbox": null
+          },
+          {
+            "kind": "bbox",
+            "value": "",
+            "bbox": {
+              "x": 177.0,
+              "y": 89.0,
+              "width": 390.0,
+              "height": 21.0
+            }
+          }
+        ],
+        "robustness_note": "Data cell identified by its neighbouring label 'Reference Number'. The cell's own text is the value being read and changes with every record, so the label is the only stable identifier; matching on the cell's text would pin this capability to a single member. Anchored to contentframe > Sub-Account Opened to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "recorded_confidence": 0.8
+      },
+      "wait": {
+        "settle_ms": 250,
+        "timeout_ms": 10000,
+        "await_navigation": false,
+        "until": null
+      },
+      "checkpoint": null,
+      "recovery_ids": [
+        "dismiss_system_notice",
+        "wait_out_transient_slowness",
+        "reauthenticate_after_timeout"
+      ],
+      "risk": "safe",
+      "min_confidence": 0.7,
+      "approved_risky": false
+    }
+  ],
+  "outcomes": [
+    {
+      "code": "MEMBER_NOT_FOUND",
+      "description": "No member exists with the supplied member number. A legitimate answer the caller needs to relay, not a malfunction.",
+      "detector": {
+        "kind": "text_present",
+        "text": "No member found",
+        "match": "contains",
+        "target": null,
+        "scope": [],
+        "description": ""
+      },
+      "terminal": true,
+      "outputs": {}
+    },
+    {
+      "code": "PERMISSION_DENIED",
+      "description": "The operator role is not permitted to view or service this member. The caller needs to know it was refused, and by whom, rather than being told the automation broke.",
+      "detector": {
+        "kind": "text_present",
+        "text": "Insufficient privileges",
+        "match": "contains",
+        "target": null,
+        "scope": [],
+        "description": ""
+      },
+      "terminal": true,
+      "outputs": {}
+    },
+    {
+      "code": "VALIDATION_REJECTED",
+      "description": "The application rejected the submitted values. The caller can correct the inputs and retry, which it cannot do if this is reported as a crash.",
+      "detector": {
+        "kind": "text_present",
+        "text": "does not meet the minimum",
+        "match": "contains",
+        "target": null,
+        "scope": [],
+        "description": ""
+      },
+      "terminal": true,
+      "outputs": {}
+    }
+  ],
+  "recovery": [
+    {
+      "id": "dismiss_system_notice",
+      "description": "An unscheduled maintenance notice can appear between any two steps. Acknowledging it returns the flow to where it was going.",
+      "trigger": {
+        "kind": "text_present",
+        "text": "System Notice",
+        "match": "contains",
+        "target": null,
+        "scope": [],
+        "description": ""
+      },
+      "strategy": "dismiss",
+      "max_attempts": 2,
+      "wait_ms": 2000,
+      "action": null,
+      "target": {
+        "role": "button",
+        "accessible_name": "Acknowledge",
+        "name_match": "normalized",
+        "name_source": "accessible_name",
+        "anchors": [],
+        "ordinal": null,
+        "fallbacks": [],
+        "robustness_note": "The notice is a vendor-standard interstitial and its acknowledge button carries a fixed caption across tenants.",
+        "recorded_confidence": 1.0
+      }
+    },
+    {
+      "id": "wait_out_transient_slowness",
+      "description": "The application intermittently takes several seconds to render. Waiting is correct; retrying the action would double-submit.",
+      "trigger": {
+        "kind": "text_absent",
+        "text": "CoreServ 4.2",
+        "match": "contains",
+        "target": null,
+        "scope": [],
+        "description": ""
+      },
+      "strategy": "wait",
+      "max_attempts": 3,
+      "wait_ms": 2000,
+      "action": null,
+      "target": null
+    },
+    {
+      "id": "reauthenticate_after_timeout",
+      "description": "Sessions expire on a fixed idle timeout and bounce to the sign-in screen. Re-authenticating and resuming is preferable to failing a run that was otherwise proceeding correctly.",
+      "trigger": {
+        "kind": "text_present",
+        "text": "session has expired",
+        "match": "contains",
+        "target": null,
+        "scope": [],
+        "description": ""
+      },
+      "strategy": "reauth",
+      "max_attempts": 1,
+      "wait_ms": 2000,
+      "action": null,
+      "target": null
+    }
+  ],
+  "risk": {
+    "contains_irreversible": true,
+    "irreversible_step_ids": [
+      "s9"
+    ],
+    "notes": "Contains at least one irreversible step; unattended replay is gated on review."
+  },
+  "provenance": {
+    "discovery_run_id": "discovery-[REDACTED]-118371",
+    "provider": "scripted",
+    "model": "scripted-0",
+    "recorded_at": "2026-08-20T10:02:57.962333Z",
+    "steps_explored": 10,
+    "human_assisted": false,
+    "human_action_count": 1
+  },
+  "approval": "draft"
+}

@@ -158,7 +158,7 @@
       "wait": {
         "settle_ms": 250,
         "timeout_ms": 10000,
-        "await_navigation": false,
+        "await_navigation": true,
         "until": null
       },
       "checkpoint": {
@@ -290,7 +290,7 @@
       "wait": {
         "settle_ms": 250,
         "timeout_ms": 10000,
-        "await_navigation": false,
+        "await_navigation": true,
         "until": null
       },
       "checkpoint": {
@@ -358,7 +358,7 @@
       "wait": {
         "settle_ms": 250,
         "timeout_ms": 10000,
-        "await_navigation": false,
+        "await_navigation": true,
         "until": null
       },
       "checkpoint": {
@@ -609,7 +609,7 @@
       "wait": {
         "settle_ms": 250,
         "timeout_ms": 10000,
-        "await_navigation": false,
+        "await_navigation": true,
         "until": null
       },
       "checkpoint": {
@@ -670,7 +670,7 @@
         "fallbacks": [
           {
             "kind": "text",
-            "value": "Reference Number SA-676063",
+            "value": "Reference Number SA-219003",
             "bbox": null
           },
           {
@@ -816,13 +816,13 @@
     "irreversible_step_ids": [
       "s9"
     ],
-    "notes": "Reviewed 2026-08-20: the sub-account submit is approved for unattended replay."
+    "notes": "Reviewed: the sub-account submit is approved for unattended replay."
   },
   "provenance": {
-    "discovery_run_id": "discovery-20260820-093548-ccd32e",
+    "discovery_run_id": "discovery-20260820-100254-118371",
     "provider": "scripted",
     "model": "scripted-0",
-    "recorded_at": "2026-08-20T09:35:51.260461Z",
+    "recorded_at": "2026-08-20T10:02:57.962333Z",
     "steps_explored": 10,
     "human_assisted": false,
     "human_action_count": 1

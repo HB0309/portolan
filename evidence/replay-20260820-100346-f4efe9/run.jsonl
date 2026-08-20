@@ -1,0 +1,2 @@
+{"seq": 1, "at": "2026-08-20T10:03:47.121419+00:00", "event": "replay.start", "capability": "cu.member.open_subaccount@v2", "tenant": null, "declared_inputs": ["account_type", "initial_deposit", "member_id", "nickname"]}
+{"seq": 2, "at": "2026-08-20T10:03:51.805740+00:00", "event": "replay.finished", "status": "success", "summary": "success: {'reference_number': 'SA-938656'}"}

@@ -131,7 +131,7 @@
       "wait": {
         "settle_ms": 250,
         "timeout_ms": 10000,
-        "await_navigation": false,
+        "await_navigation": true,
         "until": null
       },
       "checkpoint": {
@@ -263,7 +263,7 @@
       "wait": {
         "settle_ms": 250,
         "timeout_ms": 10000,
-        "await_navigation": false,
+        "await_navigation": true,
         "until": null
       },
       "checkpoint": {
@@ -471,10 +471,10 @@
     "notes": "All steps are read-only or reversible."
   },
   "provenance": {
-    "discovery_run_id": "discovery-20260820-092817-c0173c",
+    "discovery_run_id": "discovery-20260820-100251-fbf6b6",
     "provider": "scripted",
     "model": "scripted-0",
-    "recorded_at": "2026-08-20T09:28:18.897625Z",
+    "recorded_at": "2026-08-20T10:02:53.981302Z",
     "steps_explored": 5,
     "human_assisted": false,
     "human_action_count": 0

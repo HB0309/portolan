@@ -1,3 +1,0 @@
-{"seq": 1, "at": "2026-08-20T09:28:35.628009+00:00", "event": "replay.start", "capability": "cu.member.read_savings_balance@v1", "tenant": null, "declared_inputs": ["member_id"]}
-{"seq": 2, "at": "2026-08-20T09:28:36.738688+00:00", "event": "outcome.detected", "code": "MEMBER_NOT_FOUND", "step": "s4"}
-{"seq": 3, "at": "2026-08-20T09:28:36.738688+00:00", "event": "replay.finished", "status": "business_outcome", "summary": "business outcome: MEMBER_NOT_FOUND -- No member exists with the supplied member number. A legitimate answer the caller needs to relay, not a malfunction."}

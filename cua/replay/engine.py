@@ -468,6 +468,7 @@ class ReplayEngine:
                 ActionRequest(type="navigate", url=action.url.render(inputs))
             )
             return None
+        expects_nav = step.wait.await_navigation
         if isinstance(action, TypeTextAction):
             await self.surface.act(
                 ActionRequest(type="type_text", ref=ref, text=action.value.render(inputs))
@@ -479,7 +480,15 @@ class ReplayEngine:
             )
             return None
         if isinstance(action, PressKeyAction):
-            await self.surface.act(ActionRequest(type="press_key", ref=ref, key=action.key))
+            await self.surface.act(
+                ActionRequest(
+                    type="press_key",
+                    ref=ref,
+                    key=action.key,
+                    expect_navigation=expects_nav,
+                    navigation_timeout_ms=step.wait.timeout_ms + 10_000,
+                )
+            )
             return None
         if isinstance(action, ExtractAction):
             outcome = await self.surface.act(ActionRequest(type="extract", ref=ref))
@@ -491,7 +500,14 @@ class ReplayEngine:
                 if match:
                     value = match.group(1) if match.groups() else match.group(0)
             return value
-        await self.surface.act(ActionRequest(type=action.type, ref=ref))
+        await self.surface.act(
+            ActionRequest(
+                type=action.type,
+                ref=ref,
+                expect_navigation=expects_nav,
+                navigation_timeout_ms=step.wait.timeout_ms + 10_000,
+            )
+        )
         return None
 
     def _evaluate_state(
@@ -593,6 +609,16 @@ class ReplayEngine:
         decision = await self.on_escalation(reason, context)
         self.evidence.log("escalation.resolved", reason=reason, mode=decision.mode,
                           note=decision.note, human_actions=decision.human_actions)
+
+        # A human who just clicked something may have left a navigation running.
+        # Settling here means automation re-observes a finished page rather than
+        # a half-rendered one -- which it would rightly refuse to act on, and
+        # then escalate over a second time.
+        if decision.mode != "abort":
+            try:
+                await self.surface.settle()
+            except SurfaceError:
+                pass
         return decision
 
     def _as_outcome(self, outcome: BusinessOutcome, step: Step) -> OutcomeReport:

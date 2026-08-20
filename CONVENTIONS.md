@@ -50,9 +50,19 @@ cua/
   evidence/    recorder.py
   catalog/     tools.py                                -- agent-facing catalog
 mockapp/       the deliberately hostile target application
-evidence/      committed demo runs
+scripts/       build_evidence.py, index_evidence.py
+evidence/      committed demo runs, indexed by evidence/README.md
 tests/
 ```
+
+Evidence is generated, never hand-written:
+
+```bash
+venv/Scripts/python -m mockapp                   # terminal 1
+venv/Scripts/python scripts/build_evidence.py    # terminal 2
+```
+
+Add `--provider anthropic` to record the discovery runs with a real model.
 
 ## Design decisions
 

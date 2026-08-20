@@ -130,6 +130,15 @@ class ActionRequest:
     text: str | None = None
     key: str | None = None
     option: str | None = None
+    #: Whether this action is expected to navigate. Replay takes it from the
+    #: recorded step, which knows because the discovery run watched it happen.
+    #: It matters because a navigation waiter has to be armed *before* the click:
+    #: immediately afterwards the old document is still the current one, so any
+    #: "wait until loaded" check is satisfied by the page we just left.
+    expect_navigation: bool = False
+    #: How long to allow that navigation. Generous, because the point of the
+    #: flag is to survive a slow server rather than to make fast pages faster.
+    navigation_timeout_ms: int = 20_000
 
 
 @dataclass
@@ -168,3 +177,13 @@ class Surface(ABC):
     @abstractmethod
     async def current_url(self) -> str:
         ...
+
+    async def settle(self) -> None:
+        """Wait for anything in flight to finish.
+
+        Used after control returns from a human: the operator may have left a
+        navigation running, and observing a half-rendered page would make the
+        automation escalate a second time over a screen that was merely still
+        arriving. Surfaces with nothing to wait for can leave this as a no-op.
+        """
+        return None

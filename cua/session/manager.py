@@ -116,8 +116,19 @@ class SessionManager:
 
         try:
             await page.expose_binding("__cuaHumanAction", report)
+            # Covers every document loaded from here on, in every frame.
             await page.add_init_script(_WATCHER_JS)
-            await page.evaluate(_WATCHER_JS)
+            # ...and the documents already loaded, which the init script missed.
+            # Installing only on the main frame would watch the frameset shell
+            # and see nothing: in this application the operator does all their
+            # work inside the content frame.
+            for frame in page.frames:
+                try:
+                    await frame.evaluate(_WATCHER_JS)
+                except Exception:
+                    # A frame can be detached or cross-origin; skip it rather
+                    # than losing the watcher on the frames that do work.
+                    continue
             self._watching = True
         except Exception as exc:  # pragma: no cover - best effort
             # Losing the watcher costs an audit detail, not the handoff itself.

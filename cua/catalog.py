@@ -21,6 +21,10 @@ from typing import Any
 from cua.schema.capability import Capability
 
 
+def _rank(capability: Capability) -> tuple[int, int]:
+    return (1 if capability.approval == "approved" else 0, capability.version)
+
+
 @dataclass
 class CapabilityCatalog:
     capabilities: list[Capability] = field(default_factory=list)
@@ -30,6 +34,7 @@ class CapabilityCatalog:
         path = Path(directory)
         if not path.exists():
             return cls()
+
         found: list[Capability] = []
         for file in sorted(path.glob("*.json")):
             try:
@@ -38,7 +43,27 @@ class CapabilityCatalog:
                 # A malformed file should not take the whole catalog down; the
                 # agent simply cannot call that one.
                 continue
-        return cls(capabilities=found)
+        return cls(capabilities=cls._best_per_id(found))
+
+    @staticmethod
+    def _best_per_id(candidates: list[Capability]) -> list[Capability]:
+        """One entry per capability id: the version an agent should call.
+
+        Several versions of the same capability legitimately sit side by side --
+        a draft that was just recorded and the reviewed version that supersedes
+        it. An agent asking for the capability by name must get the approved one;
+        offering it whichever happened to sort first would mean a review could be
+        silently bypassed by filename.
+
+        Approved beats draft, and within the same approval state the higher
+        version wins.
+        """
+        best: dict[str, Capability] = {}
+        for capability in candidates:
+            incumbent = best.get(capability.capability_id)
+            if incumbent is None or _rank(capability) > _rank(incumbent):
+                best[capability.capability_id] = capability
+        return sorted(best.values(), key=lambda c: c.capability_id)
 
     def get(self, capability_id: str) -> Capability | None:
         for capability in self.capabilities:
