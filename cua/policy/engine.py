@@ -126,18 +126,40 @@ class PolicyEngine:
 
     # -- reversibility ---------------------------------------------------
 
+    #: Roles that can commit a change. A link with a committing-sounding name is
+    #: almost always navigation to the form rather than the act of submitting it
+    #: -- "Open Sub-Account" names both the link that opens the form and the
+    #: button that commits it, and treating the link as irreversible stops the
+    #: agent before it can even look at the screen it needs.
+    _COMMITTING_ROLES = {"button", "menuitem"}
+
     def classify_risk(
         self, action_type: str, target: ElementDescriptor | None
     ) -> tuple[RiskClass, str]:
-        """Decide whether an action commits something that cannot be undone."""
+        """Decide whether an action commits something that cannot be undone.
+
+        Two signals, both required: the control must be one that can commit, and
+        its name must read like a commitment. Requiring both is what keeps this
+        from firing on every link whose caption happens to contain a verb, while
+        still catching the thing that actually moves money.
+
+        It remains a heuristic, and it is deliberately biased: a false positive
+        costs one human confirmation, a false negative costs an irreversible
+        transaction on a member's account.
+        """
         if action_type not in {"click", "press_key"}:
+            return RiskClass.SAFE, ""
+        if target is not None and target.role not in self._COMMITTING_ROLES:
             return RiskClass.SAFE, ""
 
         name = (target.accessible_name if target else None) or ""
         lowered = name.lower()
         for pattern in self._irreversible_patterns:
             if pattern in lowered:
-                return RiskClass.IRREVERSIBLE, f"control name matches {pattern!r}"
+                return RiskClass.IRREVERSIBLE, (
+                    f"{target.role if target else 'control'} named {name!r} matches "
+                    f"the irreversible pattern {pattern!r}"
+                )
         return RiskClass.SAFE, ""
 
     # -- the gate --------------------------------------------------------

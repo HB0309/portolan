@@ -34,10 +34,15 @@ allowlist:
     - wait_for
 
 risk:
-  # An action that activates a control whose accessible name matches one of
-  # these is classified IRREVERSIBLE. The list is intentionally broad: a false
-  # positive costs one human confirmation, a false negative costs a wire
-  # transfer that cannot be undone.
+  # An action is classified IRREVERSIBLE when BOTH hold: the control is one that
+  # can commit a change (a button, not a link), and its accessible name matches
+  # one of these patterns. Requiring both matters -- "Open Sub-Account" names the
+  # link that opens the form as well as the button that submits it, and treating
+  # the link as irreversible stops the agent before it can reach the screen it
+  # needs.
+  #
+  # The list itself is intentionally broad: a false positive costs one human
+  # confirmation, a false negative costs a transfer that cannot be undone.
   irreversible_name_patterns:
     - "submit"
     - "confirm"

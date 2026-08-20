@@ -1,0 +1,152 @@
+{
+  "status": "failure",
+  "capability_id": "cu.member.read_savings_balance",
+  "capability_version": 1,
+  "run_id": "replay-[REDACTED]-513755",
+  "tenant_id": null,
+  "provider_calls": 0,
+  "outputs": null,
+  "outcome": null,
+  "failure": {
+    "category": "checkpoint_violated",
+    "step_id": "s4",
+    "step_intent": "Run the search to reach the member's detail screen.",
+    "expected": "'Member Detail' is present in contentframe",
+    "observed": "url=http://127.0.0.1:8080/?inject=server_error :: [navframe]\nServicing\nMember Search\nMember Detail\nSign Out\n\n[contentframe]\nRiverbend Credit Union   CoreServ Member Servicing\nApplication Error\n\nUnexpected application error.\nReference CORESERV-500. Th",
+    "message": "step s4 completed but the expected state was not reached",
+    "evidence": [
+      {
+        "kind": "screenshot",
+        "path": "evidence\\replay-[REDACTED]-513755\\steps\\s1.png",
+        "note": "s1"
+      },
+      {
+        "kind": "screenshot",
+        "path": "evidence\\replay-[REDACTED]-513755\\steps\\s2.png",
+        "note": "s2"
+      },
+      {
+        "kind": "screenshot",
+        "path": "evidence\\replay-[REDACTED]-513755\\steps\\s3.png",
+        "note": "s3"
+      },
+      {
+        "kind": "screenshot",
+        "path": "evidence\\replay-[REDACTED]-513755\\steps\\escalation-1.png",
+        "note": "escalation-1"
+      },
+      {
+        "kind": "dom_snapshot",
+        "path": "evidence\\replay-[REDACTED]-513755\\failures\\s4-failure.html",
+        "note": "s4-failure"
+      },
+      {
+        "kind": "screenshot",
+        "path": "evidence\\replay-[REDACTED]-513755\\steps\\s4-failure.png",
+        "note": "s4-failure"
+      }
+    ],
+    "escalated": false
+  },
+  "steps": [
+    {
+      "step_id": "s1",
+      "intent": "The operator id is required before the servicing console will open.",
+      "action_type": "type_text",
+      "status": "ok",
+      "target": "textbox 'Operator ID' in frame:contentframe > heading:Operator Sign In",
+      "value": "svc01",
+      "resolution": {
+        "rung": 1,
+        "rung_name": "role + exact accessible name",
+        "confidence": 1.0,
+        "candidates_considered": 1,
+        "degraded": false
+      },
+      "checkpoint_id": null,
+      "checkpoint_passed": null,
+      "risk": "safe",
+      "duration_ms": 62,
+      "attempts": 1,
+      "note": ""
+    },
+    {
+      "step_id": "s2",
+      "intent": "Sign in to reach the member search screen.",
+      "action_type": "click",
+      "status": "ok",
+      "target": "button 'Sign In' in frame:contentframe > heading:Operator Sign In",
+      "value": null,
+      "resolution": {
+        "rung": 1,
+        "rung_name": "role + exact accessible name",
+        "confidence": 1.0,
+        "candidates_considered": 1,
+        "degraded": false
+      },
+      "checkpoint_id": "c2",
+      "checkpoint_passed": true,
+      "risk": "safe",
+      "duration_ms": 312,
+      "attempts": 1,
+      "note": ""
+    },
+    {
+      "step_id": "s3",
+      "intent": "Enter the member number the caller supplied so the lookup targets them.",
+      "action_type": "type_text",
+      "status": "ok",
+      "target": "textbox 'Member Number' in frame:contentframe > heading:Member Search",
+      "value": "{{param.member_id}}",
+      "resolution": {
+        "rung": 1,
+        "rung_name": "role + exact accessible name",
+        "confidence": 1.0,
+        "candidates_considered": 1,
+        "degraded": false
+      },
+      "checkpoint_id": null,
+      "checkpoint_passed": null,
+      "risk": "safe",
+      "duration_ms": 14,
+      "attempts": 1,
+      "note": ""
+    }
+  ],
+  "recoveries": [],
+  "escalations": [],
+  "evidence": [
+    {
+      "kind": "screenshot",
+      "path": "evidence\\replay-[REDACTED]-513755\\steps\\s1.png",
+      "note": "s1"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\replay-[REDACTED]-513755\\steps\\s2.png",
+      "note": "s2"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\replay-[REDACTED]-513755\\steps\\s3.png",
+      "note": "s3"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\replay-[REDACTED]-513755\\steps\\escalation-1.png",
+      "note": "escalation-1"
+    },
+    {
+      "kind": "dom_snapshot",
+      "path": "evidence\\replay-[REDACTED]-513755\\failures\\s4-failure.html",
+      "note": "s4-failure"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\replay-[REDACTED]-513755\\steps\\s4-failure.png",
+      "note": "s4-failure"
+    }
+  ],
+  "started_at": "2026-08-20T09:31:35.049100Z",
+  "duration_ms": 1171
+}

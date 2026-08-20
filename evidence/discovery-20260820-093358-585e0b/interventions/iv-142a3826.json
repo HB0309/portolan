@@ -1,0 +1,25 @@
+{
+  "id": "iv-142a3826",
+  "run_id": "discovery-[REDACTED]-585e0b",
+  "reason": "irreversible_action",
+  "capability": null,
+  "goal": null,
+  "step_id": "5",
+  "step_intent": null,
+  "expected": "click",
+  "observed": "irreversible action during discovery (control name matches 'open sub-account'); a human decides whether to commit it",
+  "url": "http://127.0.0.1:8080/",
+  "screenshot": "evidence\\discovery-[REDACTED]-585e0b\\steps\\intervention-1.png",
+  "resume_options": [
+    "approve",
+    "performed_manually",
+    "skip_step",
+    "abort"
+  ],
+  "status": "resolved",
+  "raised_at": "2026-08-20T09:33:59.712122Z",
+  "resolved_at": "2026-08-20T09:33:59.714122Z",
+  "resolution": "abort",
+  "operator_note": "unattended run: the intervention was recorded but there is no operator channel to answer it",
+  "human_actions": 0
+}

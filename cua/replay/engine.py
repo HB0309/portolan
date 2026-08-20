@@ -586,7 +586,7 @@ class ReplayEngine:
         return True, ""
 
     async def _escalate(self, reason: str, context: dict[str, Any]) -> ResumeDecision:
-        self.evidence.log("escalation.raised", reason=reason, **context)
+        self.evidence.log("escalation.raised", reason=reason, context=context)
         await self.evidence.screenshot(self.surface, f"escalation-{len(self._escalations) + 1}")
         if self.on_escalation is None:
             return ResumeDecision(mode="abort", note="no operator channel configured")

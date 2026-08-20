@@ -1,0 +1,21 @@
+{
+  "tenant_id": "cascade",
+  "capability_id": "cu.member.read_savings_balance",
+  "base_version": 1,
+  "entry_point": "http://127.0.0.1:8080/?tenant=beta",
+  "notes": "Cascade Mutual FCU runs the same CoreServ 4.2 product as Riverbend, configured with different captions. The flow is identical; only two control names differ, so the capability is overlaid rather than re-recorded.",
+  "descriptor_overrides": [
+    {
+      "step_id": "s4",
+      "accessible_name": "Find Member",
+      "reason": "This tenant renamed the member search action during configuration. Same control, same position in the flow."
+    },
+    {
+      "step_id": "s5",
+      "accessible_name": "Savings Balance",
+      "reason": "The balance summary label is configured without the 'Current' prefix. The value cell is still identified by its adjacent label."
+    }
+  ],
+  "disabled_steps": [],
+  "outcome_overrides": []
+}

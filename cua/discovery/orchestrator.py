@@ -404,7 +404,7 @@ class DiscoveryOrchestrator:
         return step, summarize_step(step_index, call.name, arguments, outcome)
 
     async def _raise_intervention(self, reason: str, context: dict[str, Any]) -> bool:
-        self.evidence.log("escalation.raised", reason=reason, **context)
+        self.evidence.log("escalation.raised", reason=reason, context=context)
         if self.on_intervention is None:
             return False
         approved = await self.on_intervention(reason, context)
