@@ -395,7 +395,16 @@ async def _serve_console(broker: EscalationBroker, port: int):
     from cua.escalation.console import build_console
 
     config = uvicorn.Config(
-        build_console(broker), host="127.0.0.1", port=port, log_level="error"
+        build_console(broker),
+        host="127.0.0.1",
+        port=port,
+        log_level="error",
+        # The console has no startup or shutdown hooks, and leaving the lifespan
+        # protocol on means cancelling the server at the end of a run prints a
+        # CancelledError traceback over the result the operator is trying to
+        # read. Nothing is wrong when that happens, which is exactly why it
+        # should not look like something is.
+        lifespan="off",
     )
     server = uvicorn.Server(config)
     asyncio.create_task(server.serve())

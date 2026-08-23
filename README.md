@@ -197,6 +197,37 @@ venv/Scripts/python -m cua catalog --as-tools   # provider tool definitions
 venv/Scripts/python -m cua invoke cu.member.read_savings_balance --args '{"member_id":"10042"}'
 ```
 
+### 7. Asking in plain language
+
+`scripts/ask.py` is the seam this project exists to serve, made concrete: a
+conversational agent decides *what* to do, and a capability is *how* it happens
+inside an application with no API.
+
+```bash
+venv/Scripts/python scripts/ask.py "what is the savings balance for member 10077?"
+```
+
+```
+  you: "what is the savings balance for member 10077?"
+  2 capability(ies) offered to anthropic/claude-sonnet-5
+
+  chose : cu.member.read_savings_balance  (v1)
+  args  : {"member_id": "10077"}
+  running the capability (no model in this part)...
+
+  result: {"status": "success", "outputs": {"savings_balance": "$22,981.73"}}
+
+  agent: "Member 10077 has $22,981.73 in savings."
+```
+
+The model never sees the application, the recorded steps, or the browser — only
+a function signature and a description. It is also told which business outcomes
+are legitimate answers, so asking about a member who does not exist produces
+*"that member does not exist"* rather than a reported failure.
+
+Run it with `--provider openai` against a Claude-recorded capability to show
+that the artifact is decoupled from whatever model discovered it.
+
 ---
 
 ## The target application
