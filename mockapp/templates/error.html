@@ -1,11 +1,13 @@
 {% extends "_chrome.html" %}
+{% block status %}Unhandled exception{% endblock %}
 {% block content %}
-<table class="panel" cellpadding="4" cellspacing="0" width="520">
-  <tr><td class="panelhdr">Application Error</td></tr>
-  <tr><td>
-    <div class="err">
-      <b>Unexpected application error.</b><br>
-      Reference CORESERV-500. The transaction was not completed.
+<table cellpadding="0" cellspacing="0" border="0" width="560">
+  <tr><td class="caption">Application Error</td></tr>
+  <tr><td class="raised" style="padding:10px;">
+    <div class="msgerr">
+      <b>Unexpected application error.</b><br><br>
+      Reference CORESERV-500. The transaction was not completed.<br>
+      Contact the service desk quoting this reference.
     </div>
   </td></tr>
 </table>

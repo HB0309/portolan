@@ -1,15 +1,37 @@
 <html>
 <head><style>
-  body { font-family: Verdana; font-size: 11px; background: #eef1f4; margin: 0; }
-  td { font-size: 11px; padding: 4px 8px; }
-  a { color: {{ t.accent }}; text-decoration: none; }
-</style></head>
+  body { font-family:"MS Sans Serif",Tahoma,Verdana,sans-serif; font-size:11px;
+         background:#D4D0C8; margin:0; }
+  td { font-size:11px; padding:3px 8px; }
+  .hdr { background:{{ t.accent }}; color:#fff; font-weight:bold; padding:2px 6px; }
+  .lnk { color:#0000C0; text-decoration:underline; cursor:default; }
+  .tree { padding-left:14px; }
+</style>
+<script type="text/javascript">
+  var theForm=null;
+  function __doPostBack(t,a){
+    if(theForm===null){theForm=document.getElementById('aspnetForm');}
+    theForm.__EVENTTARGET.value=t; theForm.__EVENTARGUMENT.value=a; theForm.submit();
+  }
+</script>
+</head>
 <body>
 <table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr><td style="background: {{ t.accent }}; color: #fff;"><b>Servicing</b></td></tr>
-  <tr><td><a href="/search" target="contentframe">Member Search</a></td></tr>
-  <tr><td><a href="/member" target="contentframe">Member Detail</a></td></tr>
-  <tr><td><a href="/logout" target="_top">Sign Out</a></td></tr>
+  <tr><td class="hdr">Servicing</td></tr>
+  <tr><td class="tree"><a class="lnk" href="javascript:__doPostBack('ctl00$navMemberSearch','')">Member Search</a></td></tr>
+  <tr><td class="tree"><a class="lnk" href="javascript:__doPostBack('ctl00$navMemberDetail','')">Member Detail</a></td></tr>
+  <tr><td class="tree" style="color:#808080;">Transactions</td></tr>
+  <tr><td class="tree" style="color:#808080;">Reports</td></tr>
+  <tr><td class="hdr" style="margin-top:6px;">Session</td></tr>
+  <tr><td class="tree"><a class="lnk" href="javascript:__doPostBack('ctl00$navSignOut','')">Sign Out</a></td></tr>
 </table>
+
+{# The nav frame posts to the top window so the whole frameset navigates. #}
+<form id="aspnetForm" method="post" action="/postback" target="_top">
+  <input type="hidden" name="__EVENTTARGET" value="">
+  <input type="hidden" name="__EVENTARGUMENT" value="">
+  <input type="hidden" name="__VIEWSTATE" value="{{ viewstate }}">
+  <input type="hidden" name="__ctx" value="{{ session.get('current_member','') }}">
+</form>
 </body>
 </html>

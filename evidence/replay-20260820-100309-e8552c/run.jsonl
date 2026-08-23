@@ -1,3 +1,0 @@
-{"seq": 1, "at": "2026-08-20T10:03:09.459085+00:00", "event": "replay.start", "capability": "cu.member.read_savings_balance@v1", "tenant": null, "declared_inputs": ["member_id"]}
-{"seq": 2, "at": "2026-08-20T10:03:12.163091+00:00", "event": "outcome.detected", "code": "PERMISSION_DENIED", "step": "s4"}
-{"seq": 3, "at": "2026-08-20T10:03:12.164098+00:00", "event": "replay.finished", "status": "business_outcome", "summary": "business outcome: PERMISSION_DENIED -- The operator role is not permitted to view or service this member. The caller needs to know it was refused, and by whom, rather than being told the automation broke."}

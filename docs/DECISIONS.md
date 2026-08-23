@@ -369,3 +369,84 @@ all.
 
 **Cost.** Older versions are not directly callable through the catalog. That is
 the intent; they remain on disk and can be replayed by path for debugging.
+
+---
+
+## D20 — Capabilities are discovered by a model, not recorded from a human demo
+
+**Decision.** A capability is authored by an LLM-driven discovery run. It is not
+authored by a browser extension capturing an operator demonstrating the flow.
+
+**Why.** Record-and-replay is a real technique — it is the foundation of the RPA
+industry, and Playwright's own codegen does it. Four things make it the wrong
+primary path here.
+
+*Capturing clicks is the easy part.* The hard part is what gets recorded
+**about** an element so that it still resolves on a later render, at a different
+institution, after someone re-brands the product. Ids in this class of
+application are server-generated per render — `ctl00_wpz_ctl47_txt83` is a
+different string next time — so a recorded selector works exactly once. A
+recorder still needs the resolution ladder, the `name_source` distinction, and
+the frame and panel anchoring. Recording changes who initiates the capture; it
+changes nothing about what has to be inside the artifact. It relocates the
+problem rather than solving it.
+
+*The cost floor never comes down.* Hundreds of tenants running about twenty apps
+each means human demonstration costs one trained operator's time per flow, per
+app, forever, and again whenever a vendor ships an update. The value of the model
+is not that it clicks — it is that it can be pointed at an application nobody has
+ever recorded, given a goal in English, and work it out on the four-hundredth
+tenant as readily as the first.
+
+*A browser extension is web-only.* Native desktop applications are in scope for
+this environment. The `Surface` interface extends to Windows UI Automation and
+the macOS accessibility API; an extension architecturally cannot follow it there.
+
+*It buys nothing over CDP.* The same in-page event capture already exists in
+`cua/session/manager.py`, where the handoff records what an operator did in every
+frame. An extension would be a second codebase, in another language, doing what
+Playwright already gives us — plus an install on every operator's machine at an
+institution with opinions about browser extensions.
+
+**Cost.** LLM discovery costs an API call per step, and it can get stuck on a
+screen a human who knows the flow would walk through without thinking. That is
+what the escalation path is for.
+
+**What would change our mind.** Nothing about *authoring* being plural. Human
+demonstration is a legitimate second way to author a capability, and the machinery
+is largely already here — see REPORT.md section 7. The load-bearing constraint is
+not which path authored it but that every path emits the same artifact: the
+artifact is the centre of this system, and discovery is one way to fill it rather
+than the definition of it.
+
+---
+
+## D21 — Section detection reads structure before class names
+
+**Decision.** `sectionOf` in the perception layer looks for a `<legend>`, then a
+`<caption>` or `<th>`, and only then for the app's own panel-header class names.
+
+**Why.** It originally looked for `.panelhdr` alone, which was the target
+application's convention at the time. Rebuilding that application's markup
+changed the class to `.caption`, and every section went empty — which sounds
+cosmetic and is not. Sections are what let a descriptor say "the Search button in
+Member Search" instead of "one of the four Search buttons", and they are what a
+generated checkpoint asserts on. With no section, checkpoint markers fell back to
+whatever text was nearby, which on an application with a menu bar and a toolbar
+means chrome that appears on every page. The injected-500 replay went from
+correctly reporting a checkpoint violation to sailing past it and failing two
+steps later for an unrelated reason.
+
+The general point is that a perception layer coupled to one application's CSS
+conventions is not a perception layer. Structural cues — a legend naming its
+fieldset, a caption naming its table — carry the same meaning in any markup that
+has them, so they belong first. Class names stay as a last resort because legacy
+markup often has nothing else.
+
+**Cost.** Three lookups instead of one, and applications with neither structure
+nor a recognised class name still yield no section. Those degrade to unanchored
+descriptors, which the ambiguity rule then catches rather than mis-resolving.
+
+**How it was found.** By rebuilding the target application's markup and watching
+which replays changed behaviour — not by reading the code. The same is true of
+most of D13 through D18.

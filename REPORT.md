@@ -169,8 +169,15 @@ the recorded step carries that, because the discovery run watched it happen.
 **On UI drift**, which is secondary but worth stating: the rung a step
 resolved on is recorded per run, so drift is measured rather than assumed. A
 capability whose steps migrate toward lower rungs is diverging from its
-recording. In the cross-tenant demo, step 4 degrades to rung 5 one step *before*
-step 5 fails outright — the signal arrives before the breakage.
+recording, and the per-step rung report is what makes that visible before anyone
+diffs a screenshot.
+
+The cross-tenant demo shows the other end of the same mechanism. Against a
+tenant that renamed the search action, the recorded name no longer identifies
+one control, and by the point the ladder has loosened enough to match anything
+it matches *two* — so the run stops at step 4 with `ELEMENT_AMBIGUOUS`, naming
+both candidates. The failure lands on the step that actually diverged rather
+than on a later one that inherited the confusion.
 
 ## 4. Heterogeneity & multi-tenant
 
@@ -207,10 +214,11 @@ across a re-recording, which forces re-review rather than silently drifting.
 
 This is demonstrated, not just described. Tenant `beta` runs the same product
 with different branding and two renamed controls. The alpha recording replayed
-against it degrades to rung 5 and then fails; a nine-line overlay overriding two
-descriptors brings it back to rung 1 and success. That is the intended shape at
-scale: one recording per product, small reviewed patches per tenant, and rung
-telemetry to catch divergence before it breaks.
+against it refuses at the first divergent step, naming the two controls it could
+not choose between; a nine-line overlay overriding two descriptors brings every
+step back to rung 1 and success. That is the intended shape at scale: one
+recording per product, small reviewed patches per tenant, and rung telemetry to
+catch divergence before it breaks.
 
 ## 5. Escalation & handoff
 
@@ -328,6 +336,13 @@ Deliberately left out, with the seam kept real:
 - **Persistence beyond the filesystem.** No queue, workers, or clustering.
 - **Automated re-authentication.** Routes to a human by design, because the
   alternative is this process holding operator credentials.
+- **A second browser window.** `Surface` tracks frames within one page and does
+  not follow a `window.open`. The target application has a help window that opens
+  that way, deliberately left in and deliberately not part of any recorded flow,
+  so the limitation is visible rather than hidden. Lookup dialogs in this class
+  of software are frequently separate windows, so this is the gap I would close
+  first on the surface layer: `Observation` would need to span a page *set*, and
+  the control token would need to say which window a human was handed.
 
 What I would build next, in order:
 
@@ -340,10 +355,14 @@ What I would build next, in order:
    per step per run; aggregating it gives a per-capability reliability score and
    a principled gate for promoting `draft` to `approved`, replacing the manual
    review that currently gates unattended irreversible replay.
-3. **Promoting recorded human actions into a new capability version.** The
-   handoff already captures what the operator did; turning that into a proposed
-   step diff closes the loop so an intervention improves the capability rather
-   than just unblocking one run.
+3. **Human demonstration as a second authoring path.** The handoff already
+   captures what an operator did, in every frame; feeding that to the same
+   recorder would let a person author a capability by demonstrating it, and would
+   turn an intervention into a proposed step diff rather than a one-off unblock.
+   The constraint that matters is that both paths emit the *same* artifact — the
+   artifact is the centre of this system, and model-driven discovery is one way
+   to fill it rather than the definition of it. Why discovery is nonetheless the
+   primary path is argued in `docs/DECISIONS.md` D20.
 4. **Outcome discovery.** Business outcomes are currently curated per product. A
    review workflow that proposes new ones from unrecognised screens encountered
    during replay would keep that taxonomy current without asking a model to

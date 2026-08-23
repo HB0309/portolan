@@ -1,62 +1,116 @@
 {% extends "_chrome.html" %}
+{% block status %}Member {{ member.member_id }} loaded &nbsp;|&nbsp; Record 1 of 1{% endblock %}
 {% block content %}
-<table class="panel" cellpadding="4" cellspacing="0" width="640">
-  <tr><td class="panelhdr" colspan="4">Member Detail</td></tr>
+
+{# A tab strip built out of table cells, because that is what these are. #}
+<table cellpadding="0" cellspacing="0" border="0" width="640">
   <tr>
-    <td align="right" width="130"><font size="1">Member Number</font></td>
-    <td><b>{{ member.member_id }}</b></td>
-    <td align="right" width="90"><font size="1">Status</font></td>
-    <td>{{ member.status }}</td>
-  </tr>
-  <tr>
-    <td align="right"><font size="1">Name</font></td>
-    <td>{{ member.name }}</td>
-    <td align="right"><font size="1">Branch</font></td>
-    <td>{{ member.branch }}</td>
-  </tr>
-  <tr>
-    <td align="right"><font size="1">Member Since</font></td>
-    <td colspan="3">{{ member.joined }}</td>
+    <td class="raised" style="padding:3px 12px; border-bottom:none; font-weight:bold;">Detail</td>
+    <td class="raised" style="padding:3px 12px; background:#C0BCB4;">Accounts</td>
+    <td class="raised" style="padding:3px 12px; background:#C0BCB4;">Transactions</td>
+    <td class="raised" style="padding:3px 12px; background:#C0BCB4;">Notes</td>
+    <td width="100%"></td>
   </tr>
 </table>
 
-{# The extraction target. A labelled summary row like this is common in these
-   applications and is far more stable than reaching into the grid below, which
-   reorders its columns between tenant configurations. #}
-<table class="panel" cellpadding="4" cellspacing="0" width="640">
-  <tr><td class="panelhdr" colspan="2">Balance Summary</td></tr>
-  <tr>
-    <td align="right" width="200"><font size="1">{{ t.balance_label }}</font></td>
-    <td><b>${{ member.savings_balance }}</b></td>
-  </tr>
-  <tr>
-    <td align="right"><font size="1">Accounts On File</font></td>
-    <td>{{ member.accounts|length }}</td>
-  </tr>
+<table cellpadding="0" cellspacing="0" border="0" width="640">
+  <tr><td class="caption">Member Detail</td></tr>
+  <tr><td class="raised" style="padding:10px;">
+
+    <table cellpadding="3" cellspacing="0" border="0" width="100%">
+      <tr>
+        <td align="right" width="110">Member Number</td>
+        <td width="200"><b>{{ member.member_id }}</b></td>
+        <td align="right" width="80">Status</td>
+        <td>{{ member.status }}</td>
+      </tr>
+      <tr>
+        <td align="right">Name</td>
+        <td>{{ member.name }}</td>
+        <td align="right">Branch</td>
+        <td>{{ member.branch }}</td>
+      </tr>
+      <tr>
+        <td align="right">Member Since</td>
+        <td colspan="3">{{ member.joined }}</td>
+      </tr>
+    </table>
+
+    <br>
+
+    {# The extraction target. A labelled summary row is both common in these
+       applications and far more stable than reaching into the grid below,
+       which reorders its columns between tenant configurations. #}
+    <fieldset class="groupbox">
+      <legend>&nbsp;Balance Summary&nbsp;</legend>
+      <table cellpadding="3" cellspacing="0" border="0">
+        <tr>
+          <td align="right" width="170">{{ t.balance_label }}</td>
+          <td><b>${{ member.savings_balance }}</b></td>
+        </tr>
+        <tr>
+          <td align="right">Accounts On File</td>
+          <td>{{ member.accounts|length }}</td>
+        </tr>
+        <tr>
+          <td align="right">Available Credit</td>
+          <td>$0.00</td>
+        </tr>
+      </table>
+    </fieldset>
+
+  </td></tr>
 </table>
 
-<table class="panel" cellpadding="4" cellspacing="0" width="640">
-  <tr><td class="panelhdr" colspan="4">Accounts</td></tr>
-  <tr style="background:#e8ecf0">
-    {% if t.accounts_columns_reversed %}
-    <td><b>Balance</b></td><td><b>Account No.</b></td><td><b>Type</b></td><td><b>Opened</b></td>
-    {% else %}
-    <td><b>Type</b></td><td><b>Account No.</b></td><td><b>Balance</b></td><td><b>Opened</b></td>
-    {% endif %}
-  </tr>
-  {% for a in member.accounts %}
-  <tr>
-    {% if t.accounts_columns_reversed %}
-    <td>${{ a.balance }}</td><td>{{ a.number }}</td><td>{{ a.kind }}</td><td>{{ a.opened }}</td>
-    {% else %}
-    <td>{{ a.kind }}</td><td>{{ a.number }}</td><td>${{ a.balance }}</td><td>{{ a.opened }}</td>
-    {% endif %}
-  </tr>
-  {% endfor %}
+<br>
+
+<table cellpadding="0" cellspacing="0" border="0" width="640">
+  <tr><td class="caption">Accounts</td></tr>
+  <tr><td class="raised" style="padding:8px;">
+
+    <table class="grid" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr class="gridhdr">
+        {% if t.accounts_columns_reversed %}
+        <td>Balance</td><td>Account No.</td><td>Type</td><td>Opened</td>
+        {% else %}
+        <td>Type</td><td>Account No.</td><td>Balance</td><td>Opened</td>
+        {% endif %}
+      </tr>
+      {% for a in member.accounts %}
+      <tr {% if loop.index0 % 2 %}class="gridalt"{% endif %}>
+        {% if t.accounts_columns_reversed %}
+        <td>${{ a.balance }}</td><td>{{ a.number }}</td><td>{{ a.kind }}</td><td>{{ a.opened }}</td>
+        {% else %}
+        <td>{{ a.kind }}</td><td>{{ a.number }}</td><td>${{ a.balance }}</td><td>{{ a.opened }}</td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </table>
+
+    <table width="100%" cellpadding="2" cellspacing="0" border="0">
+      <tr>
+        <td>Record 1 to {{ member.accounts|length }} of {{ member.accounts|length }}</td>
+        <td align="right">
+          Page
+          <a class="lnk" href="javascript:__doPostBack('ctl00$grdAccounts$Page1','')">1</a>
+          <a class="lnk" href="javascript:__doPostBack('ctl00$grdAccounts$Page2','')">2</a>
+          <a class="lnk" href="javascript:__doPostBack('ctl00$grdAccounts$Page3','')">3</a>
+        </td>
+      </tr>
+    </table>
+
+  </td></tr>
 </table>
 
-<table width="640" cellpadding="4"><tr><td>
-  <a href="/subaccount/new?member={{ member.member_id }}">{{ t.open_subaccount_link }}</a>
-  &nbsp;|&nbsp; <a href="/search">Back to Search</a>
-</td></tr></table>
+<br>
+
+{# Neither of these is a link with a URL to follow. They are postback handles,
+   which is what makes constructing a route to the sub-account screen
+   impossible without going through this page. #}
+<table cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td><a class="lnk" href="javascript:__doPostBack('ctl00$lnkOpenSubAccount','')">{{ t.open_subaccount_link }}</a></td>
+    <td style="padding-left:20px;"><a class="lnk" href="javascript:__doPostBack('ctl00$lnkBackToSearch','')">Back to Search</a></td>
+  </tr>
+</table>
 {% endblock %}

@@ -1,3 +1,0 @@
-{"seq": 1, "at": "2026-08-20T10:03:16.552141+00:00", "event": "replay.start", "capability": "cu.member.read_savings_balance@v1", "tenant": null, "declared_inputs": ["member_id"]}
-{"seq": 2, "at": "2026-08-20T10:03:19.205131+00:00", "event": "recovery.applied", "step": "s4", "policy": "dismiss_system_notice", "strategy": "dismiss", "attempt": 1}
-{"seq": 3, "at": "2026-08-20T10:03:19.659489+00:00", "event": "replay.finished", "status": "success", "summary": "success: {'savings_balance': '$4,102.55'}"}

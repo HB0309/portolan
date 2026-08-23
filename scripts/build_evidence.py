@@ -129,7 +129,7 @@ def main() -> None:
          "replay: session expiry routed to a human (declined when unattended)"),
         (["--capability", BALANCE, "--inputs", '{"member_id":"10042"}',
           "--entry", "http://127.0.0.1:8080/?tenant=beta"],
-         "replay: another tenant without an overlay -- degrades, then fails"),
+         "replay: another tenant without an overlay -- refuses to guess"),
         (["--capability", BALANCE, "--inputs", '{"member_id":"10042"}',
           "--tenant", OVERLAY],
          "replay: the same tenant with an overlay -- back to rung 1"),

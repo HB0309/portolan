@@ -1,0 +1,35 @@
+{#
+  Opened in a separate browser window with window.open, the way lookups and help
+  have always worked in this class of application.
+
+  It is deliberately not part of any recorded flow. The Surface abstraction
+  tracks frames within one page and does not follow a new window, so this is a
+  real limitation of the system, documented rather than hidden -- see REPORT.md
+  section 7.
+#}
+<html>
+<head><title>CoreServ Help</title>
+<style>
+  body { margin:0; background:#D4D0C8; font-family:"MS Sans Serif",Tahoma,Verdana,sans-serif; font-size:11px; }
+  .cap { background:#000080; color:#fff; font-weight:bold; padding:2px 6px; }
+  .body { padding:10px; }
+  .sunk { border:2px inset #D4D0C8; background:#fff; padding:8px; height:170px; overflow:auto; }
+  input { border:2px outset #D4D0C8; background:#D4D0C8; padding:2px 12px; }
+</style></head>
+<body>
+  <div class="cap">Help &mdash; Member Servicing</div>
+  <div class="body">
+    <div class="sunk">
+      <b>Member Search</b><br>
+      Enter a member number, surname or tax identifier and choose Find.<br><br>
+      <b>Opening a sub-account</b><br>
+      From Member Detail, choose the sub-account option. All fields are
+      required. The initial deposit must meet the product minimum.<br><br>
+      <b>Function keys</b><br>
+      F1 Help &nbsp; F3 Exit &nbsp; F5 Refresh &nbsp; F9 Lookup &nbsp; F12 Save
+    </div>
+    <br>
+    <div align="right"><input type="button" value="Close" onclick="window.close()"></div>
+  </div>
+</body>
+</html>

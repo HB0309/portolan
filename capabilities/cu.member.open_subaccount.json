@@ -83,7 +83,7 @@
           },
           {
             "kind": "heading",
-            "value": "Operator Sign In"
+            "value": "Operator Sign On"
           }
         ],
         "ordinal": null,
@@ -92,14 +92,14 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 81.875,
-              "y": 63.0,
-              "width": 192.0,
-              "height": 19.0
+              "x": 119.0,
+              "y": 102.15625,
+              "width": 145.0,
+              "height": 18.0
             }
           }
         ],
-        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Operator ID', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > Operator Sign In to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Operator ID', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > Operator Sign On to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
         "recorded_confidence": 0.8
       },
       "wait": {
@@ -136,7 +136,7 @@
           },
           {
             "kind": "heading",
-            "value": "Operator Sign In"
+            "value": "Operator Sign On"
           }
         ],
         "ordinal": null,
@@ -145,14 +145,14 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 81.875,
-              "y": 113.0,
-              "width": 57.5,
-              "height": 21.0
+              "x": 119.0,
+              "y": 181.15625,
+              "width": 62.1875,
+              "height": 20.0
             }
           }
         ],
-        "robustness_note": "Matched on role plus the accessible name 'Sign In', which is vendor-supplied and survives tenant re-branding of layout and styling. Anchored to contentframe > Operator Sign In to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "robustness_note": "Matched on role plus the accessible name 'Sign In', which is vendor-supplied and survives tenant re-branding of layout and styling. Anchored to contentframe > Operator Sign On to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
         "recorded_confidence": 1.0
       },
       "wait": {
@@ -215,7 +215,7 @@
           },
           {
             "kind": "heading",
-            "value": "Member Search"
+            "value": "Search By"
           }
         ],
         "ordinal": null,
@@ -224,14 +224,14 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 106.078125,
-              "y": 64.0,
-              "width": 150.0,
-              "height": 19.0
+              "x": 149.0,
+              "y": 120.15625,
+              "width": 121.0,
+              "height": 18.0
             }
           }
         ],
-        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Member Number', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > Member Search to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Member Number', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > Search By to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
         "recorded_confidence": 0.8
       },
       "wait": {
@@ -268,7 +268,7 @@
           },
           {
             "kind": "heading",
-            "value": "Member Search"
+            "value": "Search By"
           }
         ],
         "ordinal": null,
@@ -277,14 +277,14 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 262.078125,
-              "y": 63.0,
-              "width": 58.25,
-              "height": 21.0
+              "x": 287.0,
+              "y": 120.15625,
+              "width": 62.859375,
+              "height": 20.0
             }
           }
         ],
-        "robustness_note": "Matched on role plus the accessible name 'Search', which is vendor-supplied and survives tenant re-branding of layout and styling. Anchored to contentframe > Member Search to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "robustness_note": "Matched on role plus the accessible name 'Search', which is vendor-supplied and survives tenant re-branding of layout and styling. Anchored to contentframe > Search By to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
         "recorded_confidence": 1.0
       },
       "wait": {
@@ -337,6 +337,10 @@
           {
             "kind": "frame",
             "value": "contentframe"
+          },
+          {
+            "kind": "heading",
+            "value": "Member Detail"
           }
         ],
         "ordinal": null,
@@ -345,14 +349,14 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 6.0,
-              "y": 318.0,
-              "width": 102.875,
-              "height": 13.0
+              "x": 8.0,
+              "y": 428.15625,
+              "width": 92.8125,
+              "height": 12.0
             }
           }
         ],
-        "robustness_note": "Matched on role plus the accessible name 'Open Sub-Account', which is vendor-supplied and survives tenant re-branding of layout and styling. Anchored to contentframe to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "robustness_note": "Matched on role plus the accessible name 'Open Sub-Account', which is vendor-supplied and survives tenant re-branding of layout and styling. Anchored to contentframe > Member Detail to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
         "recorded_confidence": 1.0
       },
       "wait": {
@@ -414,7 +418,7 @@
           },
           {
             "kind": "heading",
-            "value": "Open Sub-Account"
+            "value": "New Account"
           }
         ],
         "ordinal": null,
@@ -423,14 +427,14 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 172.0,
-              "y": 84.0,
-              "width": 98.0,
-              "height": 17.0
+              "x": 179.0,
+              "y": 150.15625,
+              "width": 97.0,
+              "height": 20.0
             }
           }
         ],
-        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Account Type', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > Open Sub-Account to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Account Type', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > New Account to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
         "recorded_confidence": 0.8
       },
       "wait": {
@@ -474,7 +478,7 @@
           },
           {
             "kind": "heading",
-            "value": "Open Sub-Account"
+            "value": "New Account"
           }
         ],
         "ordinal": null,
@@ -483,14 +487,14 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 172.0,
-              "y": 107.0,
-              "width": 206.0,
-              "height": 19.0
+              "x": 179.0,
+              "y": 176.15625,
+              "width": 169.0,
+              "height": 18.0
             }
           }
         ],
-        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Account Nickname', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > Open Sub-Account to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Account Nickname', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > New Account to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
         "recorded_confidence": 0.8
       },
       "wait": {
@@ -534,7 +538,7 @@
           },
           {
             "kind": "heading",
-            "value": "Open Sub-Account"
+            "value": "New Account"
           }
         ],
         "ordinal": null,
@@ -543,14 +547,14 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 172.0,
-              "y": 132.0,
-              "width": 108.0,
-              "height": 19.0
+              "x": 179.0,
+              "y": 200.15625,
+              "width": 97.0,
+              "height": 18.0
             }
           }
         ],
-        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Initial Deposit', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > Open Sub-Account to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Initial Deposit', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > New Account to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
         "recorded_confidence": 0.8
       },
       "wait": {
@@ -596,10 +600,10 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 172.0,
-              "y": 157.0,
-              "width": 128.640625,
-              "height": 21.0
+              "x": 20.0,
+              "y": 267.15625,
+              "width": 120.8125,
+              "height": 20.0
             }
           }
         ],
@@ -663,28 +667,28 @@
           },
           {
             "kind": "heading",
-            "value": "Sub-Account Opened"
+            "value": "Transaction Detail"
           }
         ],
         "ordinal": null,
         "fallbacks": [
           {
             "kind": "text",
-            "value": "Reference Number SA-219003",
+            "value": "Reference NumberSA-191944",
             "bbox": null
           },
           {
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 177.0,
-              "y": 89.0,
-              "width": 390.0,
-              "height": 21.0
+              "x": 186.0,
+              "y": 155.15625,
+              "width": 120.46875,
+              "height": 18.0
             }
           }
         ],
-        "robustness_note": "Data cell identified by its neighbouring label 'Reference Number'. The cell's own text is the value being read and changes with every record, so the label is the only stable identifier; matching on the cell's text would pin this capability to a single member. Anchored to contentframe > Sub-Account Opened to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "robustness_note": "Data cell identified by its neighbouring label 'Reference Number'. The cell's own text is the value being read and changes with every record, so the label is the only stable identifier; matching on the cell's text would pin this capability to a single member. Anchored to contentframe > Transaction Detail to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
         "recorded_confidence": 0.8
       },
       "wait": {
@@ -798,8 +802,8 @@
       "description": "Sessions expire on a fixed idle timeout and bounce to the sign-in screen. Re-authenticating and resuming is preferable to failing a run that was otherwise proceeding correctly.",
       "trigger": {
         "kind": "text_present",
-        "text": "session has expired",
-        "match": "contains",
+        "text": "session has (timed out|expired)",
+        "match": "regex",
         "target": null,
         "scope": [],
         "description": ""
@@ -819,10 +823,10 @@
     "notes": "Contains at least one irreversible step; unattended replay is gated on review."
   },
   "provenance": {
-    "discovery_run_id": "discovery-20260820-100254-118371",
+    "discovery_run_id": "discovery-20260823-050749-7ef011",
     "provider": "scripted",
     "model": "scripted-0",
-    "recorded_at": "2026-08-20T10:02:57.962333Z",
+    "recorded_at": "2026-08-23T05:07:53.545689Z",
     "steps_explored": 10,
     "human_assisted": false,
     "human_action_count": 1

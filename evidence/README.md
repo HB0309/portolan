@@ -12,22 +12,22 @@ up being a chat log that cannot be replayed.
 
 | Run | Kind | Status | What it shows |
 |---|---|---|---|
-| `discovery-20260820-100251-fbf6b6` | discovery | **succeeded** | recorded `cu.member.read_savings_balance` in 5 steps |
-| `discovery-20260820-100254-118371` | discovery | **succeeded** | recorded `cu.member.open_subaccount` in 10 steps |
-| `replay-20260820-100258-0b8caa` | replay | **success** | outputs `{'savings_balance': '$4,102.55'}` |
-| `replay-20260820-100301-e36981` | replay | **success** | outputs `{'savings_balance': '$22,981.73'}` |
-| `replay-20260820-100305-a62613` | replay | **business_outcome** | `MEMBER_NOT_FOUND` |
-| `replay-20260820-100309-e8552c` | replay | **business_outcome** | `PERMISSION_DENIED` |
-| `replay-20260820-100312-76e93f` | replay | **failure** | `checkpoint_violated` at step `s4` |
-| `replay-20260820-100316-23cbeb` | replay | **success** | outputs `{'savings_balance': '$4,102.55'}` -- recovery `dismiss_system_notice` applied |
-| `replay-20260820-100320-7fd4e7` | replay | **success** | outputs `{'savings_balance': '$4,102.55'}` |
-| `replay-20260820-100331-f2605a` | replay | **failure** | `recovery_exhausted` at step `s4` |
-| `replay-20260820-100334-02b66a` | replay | **failure** | `element_not_found` at step `s5` -- 1 degraded step(s), a drift signal |
-| `replay-20260820-100338-e0b3e8` | replay | **success** | outputs `{'savings_balance': '$4,102.55'}` -- tenant `cascade` |
-| `replay-20260820-100342-36bc64` | replay | **failure** | `human_aborted` at step `s9` |
-| `replay-20260820-100346-f4efe9` | replay | **success** | outputs `{'reference_number': 'SA-938656'}` |
-| `replay-20260820-100352-b88680` | replay | **business_outcome** | `VALIDATION_REJECTED` |
-| `replay-20260820-100357-ac45be` | replay | **failure** | `input_invalid` |
+| `discovery-20260823-050746-b2ef0a` | discovery | **succeeded** | recorded `cu.member.read_savings_balance` in 5 steps |
+| `discovery-20260823-050749-7ef011` | discovery | **succeeded** | recorded `cu.member.open_subaccount` in 10 steps |
+| `replay-20260823-050753-672eb3` | replay | **success** | outputs `{'savings_balance': '$4,102.55'}` |
+| `replay-20260823-050757-16681e` | replay | **success** | outputs `{'savings_balance': '$22,981.73'}` |
+| `replay-20260823-050801-6c955e` | replay | **business_outcome** | `MEMBER_NOT_FOUND` |
+| `replay-20260823-050805-d83edd` | replay | **business_outcome** | `PERMISSION_DENIED` |
+| `replay-20260823-050808-6e3857` | replay | **failure** | `checkpoint_violated` at step `s4` |
+| `replay-20260823-050812-8ad2e2` | replay | **success** | outputs `{'savings_balance': '$4,102.55'}` -- recovery `dismiss_system_notice` applied |
+| `replay-20260823-050816-99f2a2` | replay | **success** | outputs `{'savings_balance': '$4,102.55'}` |
+| `replay-20260823-050828-a8f1ac` | replay | **failure** | `recovery_exhausted` at step `s4` |
+| `replay-20260823-050831-703283` | replay | **failure** | `element_ambiguous` at step `s4` |
+| `replay-20260823-050834-1263e8` | replay | **success** | outputs `{'savings_balance': '$4,102.55'}` -- tenant `cascade` |
+| `replay-20260823-050838-8af047` | replay | **failure** | `human_aborted` at step `s9` |
+| `replay-20260823-050843-f1097a` | replay | **success** | outputs `{'reference_number': 'SA-994123'}` |
+| `replay-20260823-050849-437813` | replay | **business_outcome** | `VALIDATION_REJECTED` |
+| `replay-20260823-050854-155106` | replay | **failure** | `input_invalid` |
 
 ## Note on the discovery runs here
 

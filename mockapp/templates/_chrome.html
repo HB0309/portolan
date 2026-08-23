@@ -1,38 +1,176 @@
 {#
   Shared chrome for every content page.
 
-  Table layout, <font> tags, inline styles, ids regenerated per render. This is
-  what the automation has to cope with, so it is what the app renders.
+  The look is the vernacular of late-1990s enterprise client software, which is
+  what a great deal of bank back-office tooling still is: beveled 3D borders, a
+  fixed 800x600 assumption, a menu bar with accelerator underlines, a sunken
+  status bar and a function-key strip. None of it is copied from any product --
+  it is the period's shared idiom, reproduced from scratch.
+
+  It is not decoration. Every element below is something automation has to cope
+  with: controls that are neither buttons nor real links, nested tables, ids that
+  change on every render, and labels that exist only as the cell to the left.
 #}
 <html>
 <head>
   <title>{{ t.product_title }}</title>
   <style>
-    body { font-family: Verdana, Arial, sans-serif; font-size: 11px; margin: 0; background: #dfe3e8; }
-    td { font-size: 11px; }
-    .hdr { background: {{ t.accent }}; color: #ffffff; padding: 6px 10px; }
-    .panel { background: #ffffff; border: 1px solid #9aa5b1; margin: 8px; }
-    .panelhdr { background: #c3ccd6; padding: 3px 6px; font-weight: bold; }
-    .err { background: #ffe8e8; border: 1px solid #cc0000; color: #a00000; padding: 5px; }
-    .warn { background: #fff8dd; border: 1px solid #c8a300; padding: 5px; }
-    input[type=text], input[type=password], select { font-family: Verdana; font-size: 11px; }
+    /* --- the period palette: system 3D colours --- */
+    html, body {
+      margin: 0; padding: 0;
+      background: {{ t.accent }};
+      font-family: "MS Sans Serif", Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 11px;
+      color: #000000;
+    }
+    td, th, input, select, button { font-family: "MS Sans Serif", Tahoma, Verdana, sans-serif; font-size: 11px; }
+
+    /* raised: white/ltgray outer, gray/dark inner */
+    .raised  { border: 2px outset #D4D0C8; background: #D4D0C8; }
+    .sunken  { border: 2px inset  #D4D0C8; background: #FFFFFF; }
+    .etched  { border: 1px solid #808080; border-right-color: #FFFFFF; border-bottom-color: #FFFFFF; }
+    .groupbox{ border: 2px groove #D4D0C8; padding: 6px 8px; margin: 0; }
+
+    .appface { background: #D4D0C8; }
+
+    /* --- title bar --- */
+    .titlebar {
+      background: {{ t.accent }};
+      color: #FFFFFF;
+      padding: 2px 3px;
+      font-weight: bold;
+      letter-spacing: 0.2px;
+    }
+    .titlebtn {
+      float: right; width: 15px; height: 13px; margin-left: 2px;
+      border: 1px outset #D4D0C8; background: #D4D0C8; color: #000;
+      font-size: 9px; text-align: center; line-height: 11px; font-weight: bold;
+    }
+
+    /* --- menu bar --- */
+    .menubar { background: #D4D0C8; border-bottom: 1px solid #808080; padding: 1px 2px; }
+    .menubar span { padding: 2px 7px; display: inline-block; cursor: default; }
+    .menubar span:hover { background: {{ t.accent }}; color: #FFFFFF; }
+    .menubar u { text-decoration: underline; }
+
+    /* --- toolbar --- */
+    .toolbar { background: #D4D0C8; padding: 3px 4px; border-bottom: 1px solid #808080; }
+    .tbtn {
+      display: inline-block; border: 1px outset #D4D0C8; background: #D4D0C8;
+      padding: 2px 6px; margin-right: 2px; cursor: default; color: #000;
+      text-decoration: none;
+    }
+    .tbtn:active { border-style: inset; }
+    .tsep { display: inline-block; width: 1px; height: 16px; background: #808080;
+            border-right: 1px solid #FFFFFF; margin: 0 4px; vertical-align: middle; }
+
+    /* --- content well --- */
+    .well { background: #D4D0C8; padding: 8px; }
+
+    .caption {
+      background: {{ t.accent }}; color: #FFFFFF; font-weight: bold;
+      padding: 2px 6px;
+    }
+
+    /* --- fields --- */
+    input[type=text], input[type=password], select {
+      border: 2px inset #D4D0C8; background: #FFFFFF; padding: 1px 2px;
+    }
+    input[type=text][readonly] { background: #D4D0C8; }
+    input[type=submit], input[type=button] {
+      border: 2px outset #D4D0C8; background: #D4D0C8; padding: 2px 12px; cursor: default;
+    }
+    input[type=submit]:active { border-style: inset; }
+
+    /* --- data grid --- */
+    .grid { border: 2px inset #D4D0C8; background: #FFFFFF; }
+    .grid td { padding: 2px 6px; border-bottom: 1px solid #E8E8E8; }
+    .gridhdr td {
+      background: #D4D0C8; border: 1px outset #D4D0C8; font-weight: bold;
+      padding: 2px 6px; cursor: default;
+    }
+    .gridalt { background: #F4F4F4; }
+
+    /* --- messages --- */
+    .msgerr  { border: 2px inset #D4D0C8; background: #FFFFE1; padding: 5px 7px; color: #800000; }
+    .msgwarn { border: 2px inset #D4D0C8; background: #FFFFE1; padding: 5px 7px; }
+
+    /* --- status + function keys --- */
+    .fkeys { background: #D4D0C8; border-top: 1px solid #FFFFFF; padding: 2px 4px; color: #000080; }
+    .fkeys b { color: #000000; }
+    .statusbar { background: #D4D0C8; padding: 2px; border-top: 1px solid #FFFFFF; }
+    .statuspanel { border: 1px inset #D4D0C8; padding: 1px 6px; }
+
+    a { color: #0000C0; }
+    .lnk { color: #0000C0; text-decoration: underline; cursor: default; }
   </style>
+
+  <script type="text/javascript">
+    // The postback shim. Controls in this application are not links or buttons --
+    // they are javascript: handles that stuff a hidden form and submit it. An
+    // automation strategy that looks for an href to follow finds nothing here.
+    var theForm = null;
+    function __doPostBack(eventTarget, eventArgument) {
+      if (theForm === null) { theForm = document.getElementById('aspnetForm'); }
+      theForm.__EVENTTARGET.value = eventTarget;
+      theForm.__EVENTARGUMENT.value = eventArgument;
+      theForm.submit();
+    }
+  </script>
 </head>
 <body>
-<table width="100%" cellpadding="0" cellspacing="0" border="0">
-  <tr><td class="hdr">
-    <font size="2"><b>{{ t.institution }}</b></font>
-    &nbsp;&nbsp;<font size="1">{{ t.product_title }}</font>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" class="appface">
+  <tr><td class="titlebar">
+    <span class="titlebtn">X</span><span class="titlebtn">&#9633;</span><span class="titlebtn">_</span>
+    {{ t.product_title }} &nbsp;-&nbsp; [{{ t.institution }}]
+  </td></tr>
+
+  <tr><td class="menubar">
+    <span><u>F</u>ile</span><span><u>E</u>dit</span><span><u>V</u>iew</span><span><u>S</u>ervicing</span><span>&#84;<u>o</u>ols</span><span><u>W</u>indow</span><span><u>H</u>elp</span>
+  </td></tr>
+
+  <tr><td class="toolbar">
+    <a class="tbtn" href="javascript:__doPostBack('ctl00$tbrOpen','')">Open</a><a class="tbtn" href="javascript:__doPostBack('ctl00$tbrSave','')">Save</a><span class="tsep"></span><a class="tbtn" href="javascript:__doPostBack('ctl00$tbrSearch','')">Find Member</a><a class="tbtn" href="javascript:__doPostBack('ctl00$tbrRefresh','')">Refresh</a><span class="tsep"></span><a class="tbtn" href="javascript:openHelp()">Help</a>
+  </td></tr>
+
+  <tr><td class="well">
+    {% block content %}{% endblock %}
+  </td></tr>
+
+  <tr><td class="fkeys">
+    <b>F1</b>=Help &nbsp; <b>F3</b>=Exit &nbsp; <b>F5</b>=Refresh &nbsp;
+    <b>F9</b>=Lookup &nbsp; <b>F12</b>=Save &nbsp; <b>Esc</b>=Cancel
+  </td></tr>
+
+  <tr><td class="statusbar">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td width="55%"><div class="statuspanel">{% block status %}Ready{% endblock %}</div></td>
+      <td width="25%"><div class="statuspanel">Operator: {{ session.get('operator', 'not signed in') }}</div></td>
+      <td width="20%"><div class="statuspanel">CoreServ 4.2{% if session.get('inject') and session.get('inject') != 'none' %} &nbsp;[{{ session.get('inject') }}]{% endif %}</div></td>
+    </tr></table>
   </td></tr>
 </table>
-{% block content %}{% endblock %}
-<table width="100%" cellpadding="2" cellspacing="0" border="0">
-  <tr><td align="center"><font size="1" color="#66707a">
-    CoreServ 4.2 &nbsp;|&nbsp; Session {{ session.get('operator', 'guest') }}
-    {% if session.get('inject') and session.get('inject') != 'none' %}
-      &nbsp;|&nbsp; <i>mode: {{ session.get('inject') }}</i>
-    {% endif %}
-  </font></td></tr>
-</table>
+
+{#
+  The postback form. Every javascript: control on the page stuffs these hidden
+  fields and submits this, exactly as WebForms does. The viewstate blob is inert
+  here, but it is the reason these pages cannot be driven by constructing a URL.
+#}
+<form id="aspnetForm" method="post" action="/postback">
+  <input type="hidden" name="__EVENTTARGET" value="">
+  <input type="hidden" name="__EVENTARGUMENT" value="">
+  <input type="hidden" name="__VIEWSTATE" value="{{ viewstate }}">
+  <input type="hidden" name="__ctx" value="{{ session.get('current_member', '') }}">
+</form>
+
+<script type="text/javascript">
+  function openHelp() {
+    // A separate browser window, which is how these applications have always
+    // done lookups and help. Automation that tracks one page does not see it.
+    window.open('/help', 'coreservHelp', 'width=420,height=320,resizable=yes');
+  }
+</script>
+
 </body>
 </html>

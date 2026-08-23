@@ -20,7 +20,7 @@ from typing import Any
 
 from cua.llm.base import LLMError, LLMResponse, Message, ToolCall
 
-DEFAULT_MODEL = "claude-sonnet-5"
+DEFAULT_MODEL = "claude-opus-5"
 
 
 class AnthropicProvider:

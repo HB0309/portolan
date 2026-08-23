@@ -1,2 +1,0 @@
-{"seq": 1, "at": "2026-08-20T10:03:58.138487+00:00", "event": "replay.start", "capability": "cu.member.read_savings_balance@v1", "tenant": null, "declared_inputs": ["member_id"]}
-{"seq": 2, "at": "2026-08-20T10:03:58.138487+00:00", "event": "replay.finished", "status": "failure", "summary": "failure (input_invalid): unknown input 'nope'"}

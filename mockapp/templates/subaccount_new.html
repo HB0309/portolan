@@ -1,46 +1,72 @@
 {% extends "_chrome.html" %}
+{% block status %}Complete all required fields{% endblock %}
 {% block content %}
-<table class="panel" cellpadding="4" cellspacing="0" width="560">
-  <tr><td class="panelhdr" colspan="2">{{ t.open_subaccount_link }}</td></tr>
-  {% if error %}
-  <tr><td colspan="2"><div class="err">{{ error }}</div></td></tr>
-  {% endif %}
-  <tr>
-    <td align="right" width="160"><font size="1">Member</font></td>
-    <td>{{ member.member_id }} &mdash; {{ member.name }}</td>
-  </tr>
-  <tr><td colspan="2">
+<table cellpadding="0" cellspacing="0" border="0" width="600">
+  <tr><td class="caption">{{ t.open_subaccount_link }}</td></tr>
+  <tr><td class="raised" style="padding:10px;">
+
+    {% if error %}<div class="msgerr">{{ error }}</div><br>{% endif %}
+
+    <table cellpadding="3" cellspacing="0" border="0" width="100%">
+      <tr>
+        <td align="right" width="150">Member</td>
+        <td>{{ member.member_id }} &nbsp;&mdash;&nbsp; {{ member.name }}</td>
+      </tr>
+    </table>
+
+    <br>
+
     <form method="post" action="/subaccount/new">
     <input type="hidden" name="member_id" value="{{ member.member_id }}">
-    <table cellpadding="3" cellspacing="0" border="0">
+    <fieldset class="groupbox">
+      <legend>&nbsp;New Account&nbsp;</legend>
+      <table cellpadding="3" cellspacing="0" border="0">
+        <tr>
+          <td align="right" width="140">Account Type</td>
+          <td>
+            <select name="account_type" id="{{ gid('sel') }}">
+              <option value="">&lt; select &gt;</option>
+              {% for ty in types %}<option value="{{ ty }}">{{ ty }}</option>{% endfor %}
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td align="right">Account Nickname</td>
+          <td><input type="text" name="nickname" id="{{ gid('txt') }}" size="24" maxlength="30"></td>
+        </tr>
+        <tr>
+          <td align="right">Initial Deposit</td>
+          <td>
+            <input type="text" name="initial_deposit" id="{{ gid('txt') }}" size="12">
+            &nbsp;<span style="color:#606060;">minimum $25.00</span>
+          </td>
+        </tr>
+        <tr>
+          <td align="right">Statement Cycle</td>
+          <td>
+            <select name="cycle" id="{{ gid('sel') }}">
+              <option>Monthly</option>
+              <option>Quarterly</option>
+            </select>
+          </td>
+        </tr>
+      </table>
+    </fieldset>
+
+    <br>
+    <table cellpadding="0" cellspacing="0" border="0">
       <tr>
-        <td align="right" width="150"><font size="1">Account Type</font></td>
-        <td>
-          <select name="account_type" id="{{ gid('sel') }}">
-            <option value="">-- select --</option>
-            {% for ty in types %}<option value="{{ ty }}">{{ ty }}</option>{% endfor %}
-          </select>
-        </td>
-      </tr>
-      <tr>
-        <td align="right"><font size="1">Account Nickname</font></td>
-        <td><input type="text" name="nickname" id="{{ gid('txt') }}" size="26"></td>
-      </tr>
-      <tr>
-        <td align="right"><font size="1">Initial Deposit</font></td>
-        <td><input type="text" name="initial_deposit" id="{{ gid('txt') }}" size="12">
-            <font size="1" color="#66707a">&nbsp;minimum $25.00</font></td>
-      </tr>
-      <tr>
-        <td></td>
-        {# The irreversible control. The policy engine classifies this by its
+        {# The irreversible control. The policy engine classifies it by its
            caption and refuses to let an unapproved capability activate it
            unattended. #}
-        <td><input type="submit" id="{{ gid('btn') }}" value="{{ t.subaccount_submit }}">
-            &nbsp;<a href="/member?id={{ member.member_id }}">Cancel</a></td>
+        <td><input type="submit" id="{{ gid('btn') }}" value="{{ t.subaccount_submit }}"></td>
+        <td style="padding-left:10px;">
+          <a class="lnk" href="javascript:__doPostBack('ctl00$navMemberDetail','')">Cancel</a>
+        </td>
       </tr>
     </table>
     </form>
+
   </td></tr>
 </table>
 {% endblock %}

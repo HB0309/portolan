@@ -1,0 +1,273 @@
+<!-- frame: main url: http://127.0.0.1:8080/ -->
+<html><head><title>CoreServ Member Servicing</title></head>
+<frameset cols="170,*" border="1">
+  <frame name="navframe" src="/nav">
+  <frame name="contentframe" src="/login">
+  <noframes><body>This application requires frame support.</body></noframes>
+</frameset>
+</html>
+
+<!-- frame: navframe url: http://127.0.0.1:8080/nav -->
+<html><head><style>
+  body { font-family:"MS Sans Serif",Tahoma,Verdana,sans-serif; font-size:11px;
+         background:#D4D0C8; margin:0; }
+  td { font-size:11px; padding:3px 8px; }
+  .hdr { background:#1b3a5c; color:#fff; font-weight:bold; padding:2px 6px; }
+  .lnk { color:#0000C0; text-decoration:underline; cursor:default; }
+  .tree { padding-left:14px; }
+</style>
+<script type="text/javascript">
+  var theForm=null;
+  function __doPostBack(t,a){
+    if(theForm===null){theForm=document.getElementById('aspnetForm');}
+    theForm.__EVENTTARGET.value=t; theForm.__EVENTARGUMENT.value=a; theForm.submit();
+  }
+</script>
+</head>
+<body>
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tbody><tr><td class="hdr" data-cua-ref="e0">Servicing</td></tr>
+  <tr><td class="tree"><a class="lnk" href="javascript:__doPostBack('ctl00$navMemberSearch','')" data-cua-ref="e1">Member Search</a></td></tr>
+  <tr><td class="tree"><a class="lnk" href="javascript:__doPostBack('ctl00$navMemberDetail','')" data-cua-ref="e2">Member Detail</a></td></tr>
+  <tr><td class="tree" style="color:#808080;" data-cua-ref="e3">Transactions</td></tr>
+  <tr><td class="tree" style="color:#808080;" data-cua-ref="e4">Reports</td></tr>
+  <tr><td class="hdr" style="margin-top:6px;" data-cua-ref="e5">Session</td></tr>
+  <tr><td class="tree"><a class="lnk" href="javascript:__doPostBack('ctl00$navSignOut','')" data-cua-ref="e6">Sign Out</a></td></tr>
+</tbody></table>
+
+
+<form id="aspnetForm" method="post" action="/postback" target="_top">
+  <input type="hidden" name="__EVENTTARGET" value="" style="">
+  <input type="hidden" name="__EVENTARGUMENT" value="" style="">
+  <input type="hidden" name="__VIEWSTATE" value="/wEPDwUKM6oUIze5I27Nym/AdvKvHp0CzGQksERFajU32tbr8sv5EZ7XjzQ194H8A8g10spH9" style="">
+  <input type="hidden" name="__ctx" value="" style="">
+</form>
+
+</body></html>
+
+<!-- frame: contentframe url: http://127.0.0.1:8080/subaccount/new?member=10043 -->
+<html><head>
+  <title>CoreServ Member Servicing</title>
+  <style>
+    /* --- the period palette: system 3D colours --- */
+    html, body {
+      margin: 0; padding: 0;
+      background: #1b3a5c;
+      font-family: "MS Sans Serif", Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 11px;
+      color: #000000;
+    }
+    td, th, input, select, button { font-family: "MS Sans Serif", Tahoma, Verdana, sans-serif; font-size: 11px; }
+
+    /* raised: white/ltgray outer, gray/dark inner */
+    .raised  { border: 2px outset #D4D0C8; background: #D4D0C8; }
+    .sunken  { border: 2px inset  #D4D0C8; background: #FFFFFF; }
+    .etched  { border: 1px solid #808080; border-right-color: #FFFFFF; border-bottom-color: #FFFFFF; }
+    .groupbox{ border: 2px groove #D4D0C8; padding: 6px 8px; margin: 0; }
+
+    .appface { background: #D4D0C8; }
+
+    /* --- title bar --- */
+    .titlebar {
+      background: #1b3a5c;
+      color: #FFFFFF;
+      padding: 2px 3px;
+      font-weight: bold;
+      letter-spacing: 0.2px;
+    }
+    .titlebtn {
+      float: right; width: 15px; height: 13px; margin-left: 2px;
+      border: 1px outset #D4D0C8; background: #D4D0C8; color: #000;
+      font-size: 9px; text-align: center; line-height: 11px; font-weight: bold;
+    }
+
+    /* --- menu bar --- */
+    .menubar { background: #D4D0C8; border-bottom: 1px solid #808080; padding: 1px 2px; }
+    .menubar span { padding: 2px 7px; display: inline-block; cursor: default; }
+    .menubar span:hover { background: #1b3a5c; color: #FFFFFF; }
+    .menubar u { text-decoration: underline; }
+
+    /* --- toolbar --- */
+    .toolbar { background: #D4D0C8; padding: 3px 4px; border-bottom: 1px solid #808080; }
+    .tbtn {
+      display: inline-block; border: 1px outset #D4D0C8; background: #D4D0C8;
+      padding: 2px 6px; margin-right: 2px; cursor: default; color: #000;
+      text-decoration: none;
+    }
+    .tbtn:active { border-style: inset; }
+    .tsep { display: inline-block; width: 1px; height: 16px; background: #808080;
+            border-right: 1px solid #FFFFFF; margin: 0 4px; vertical-align: middle; }
+
+    /* --- content well --- */
+    .well { background: #D4D0C8; padding: 8px; }
+
+    .caption {
+      background: #1b3a5c; color: #FFFFFF; font-weight: bold;
+      padding: 2px 6px;
+    }
+
+    /* --- fields --- */
+    input[type=text], input[type=password], select {
+      border: 2px inset #D4D0C8; background: #FFFFFF; padding: 1px 2px;
+    }
+    input[type=text][readonly] { background: #D4D0C8; }
+    input[type=submit], input[type=button] {
+      border: 2px outset #D4D0C8; background: #D4D0C8; padding: 2px 12px; cursor: default;
+    }
+    input[type=submit]:active { border-style: inset; }
+
+    /* --- data grid --- */
+    .grid { border: 2px inset #D4D0C8; background: #FFFFFF; }
+    .grid td { padding: 2px 6px; border-bottom: 1px solid #E8E8E8; }
+    .gridhdr td {
+      background: #D4D0C8; border: 1px outset #D4D0C8; font-weight: bold;
+      padding: 2px 6px; cursor: default;
+    }
+    .gridalt { background: #F4F4F4; }
+
+    /* --- messages --- */
+    .msgerr  { border: 2px inset #D4D0C8; background: #FFFFE1; padding: 5px 7px; color: #800000; }
+    .msgwarn { border: 2px inset #D4D0C8; background: #FFFFE1; padding: 5px 7px; }
+
+    /* --- status + function keys --- */
+    .fkeys { background: #D4D0C8; border-top: 1px solid #FFFFFF; padding: 2px 4px; color: #000080; }
+    .fkeys b { color: #000000; }
+    .statusbar { background: #D4D0C8; padding: 2px; border-top: 1px solid #FFFFFF; }
+    .statuspanel { border: 1px inset #D4D0C8; padding: 1px 6px; }
+
+    a { color: #0000C0; }
+    .lnk { color: #0000C0; text-decoration: underline; cursor: default; }
+  </style>
+
+  <script type="text/javascript">
+    // The postback shim. Controls in this application are not links or buttons --
+    // they are javascript: handles that stuff a hidden form and submit it. An
+    // automation strategy that looks for an href to follow finds nothing here.
+    var theForm = null;
+    function __doPostBack(eventTarget, eventArgument) {
+      if (theForm === null) { theForm = document.getElementById('aspnetForm'); }
+      theForm.__EVENTTARGET.value = eventTarget;
+      theForm.__EVENTARGUMENT.value = eventArgument;
+      theForm.submit();
+    }
+  </script>
+</head>
+<body>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" class="appface">
+  <tbody><tr><td class="titlebar" data-cua-ref="e0">
+    <span class="titlebtn">X</span><span class="titlebtn">□</span><span class="titlebtn">_</span>
+    CoreServ Member Servicing &nbsp;-&nbsp; [Riverbend Credit Union]
+  </td></tr>
+
+  <tr><td class="menubar" data-cua-ref="e1">
+    <span><u>F</u>ile</span><span><u>E</u>dit</span><span><u>V</u>iew</span><span><u>S</u>ervicing</span><span>T<u>o</u>ols</span><span><u>W</u>indow</span><span><u>H</u>elp</span>
+  </td></tr>
+
+  <tr><td class="toolbar">
+    <a class="tbtn" href="javascript:__doPostBack('ctl00$tbrOpen','')" data-cua-ref="e2">Open</a><a class="tbtn" href="javascript:__doPostBack('ctl00$tbrSave','')" data-cua-ref="e3">Save</a><span class="tsep"></span><a class="tbtn" href="javascript:__doPostBack('ctl00$tbrSearch','')" data-cua-ref="e4">Find Member</a><a class="tbtn" href="javascript:__doPostBack('ctl00$tbrRefresh','')" data-cua-ref="e5">Refresh</a><span class="tsep"></span><a class="tbtn" href="javascript:openHelp()" data-cua-ref="e6">Help</a>
+  </td></tr>
+
+  <tr><td class="well">
+    
+<table cellpadding="0" cellspacing="0" border="0" width="600">
+  <tbody><tr><td class="caption" data-cua-ref="e7">Open Sub-Account</td></tr>
+  <tr><td class="raised" style="padding:10px;">
+
+    
+
+    <table cellpadding="3" cellspacing="0" border="0" width="100%">
+      <tbody><tr>
+        <td align="right" width="150" data-cua-ref="e8">Member</td>
+        <td data-cua-ref="e9">10043 &nbsp;—&nbsp; Marcus Oyelaran</td>
+      </tr>
+    </tbody></table>
+
+    <br>
+
+    <form method="post" action="/subaccount/new">
+    <input type="hidden" name="member_id" value="10043" style="">
+    <fieldset class="groupbox">
+      <legend>&nbsp;New Account&nbsp;</legend>
+      <table cellpadding="3" cellspacing="0" border="0">
+        <tbody><tr>
+          <td align="right" width="140" data-cua-ref="e10">Account Type</td>
+          <td>
+            <select name="account_type" id="ctl00_wpz_ctl50_sel10" data-cua-ref="e11">
+              <option value="">&lt; select &gt;</option>
+              <option value="Savings">Savings</option><option value="Checking">Checking</option><option value="Holiday Club">Holiday Club</option><option value="Vacation Club">Vacation Club</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td align="right" data-cua-ref="e12">Account Nickname</td>
+          <td><input type="text" name="nickname" id="ctl00_wpz_ctl95_txt76" size="24" maxlength="30" style="" data-cua-ref="e13"></td>
+        </tr>
+        <tr>
+          <td align="right" data-cua-ref="e14">Initial Deposit</td>
+          <td>
+            <input type="text" name="initial_deposit" id="ctl00_wpz_ctl14_txt58" size="12" style="" data-cua-ref="e15">
+            &nbsp;<span style="color:#606060;">minimum $25.00</span>
+          </td>
+        </tr>
+        <tr>
+          <td align="right" data-cua-ref="e16">Statement Cycle</td>
+          <td>
+            <select name="cycle" id="ctl00_wpz_ctl48_sel40" data-cua-ref="e17">
+              <option>Monthly</option>
+              <option>Quarterly</option>
+            </select>
+          </td>
+        </tr>
+      </tbody></table>
+    </fieldset>
+
+    <br>
+    <table cellpadding="0" cellspacing="0" border="0">
+      <tbody><tr>
+        
+        <td><input type="submit" id="ctl00_wpz_ctl87_btn95" value="Open Sub-Account" data-cua-ref="e18" style=""></td>
+        <td style="padding-left:10px;">
+          <a class="lnk" href="javascript:__doPostBack('ctl00$navMemberDetail','')" data-cua-ref="e19">Cancel</a>
+        </td>
+      </tr>
+    </tbody></table>
+    </form>
+
+  </td></tr>
+</tbody></table>
+
+  </td></tr>
+
+  <tr><td class="fkeys" data-cua-ref="e20">
+    <b>F1</b>=Help &nbsp; <b>F3</b>=Exit &nbsp; <b>F5</b>=Refresh &nbsp;
+    <b>F9</b>=Lookup &nbsp; <b>F12</b>=Save &nbsp; <b>Esc</b>=Cancel
+  </td></tr>
+
+  <tr><td class="statusbar">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0"><tbody><tr>
+      <td width="55%" data-cua-ref="e21"><div class="statuspanel">Complete all required fields</div></td>
+      <td width="25%" data-cua-ref="e22"><div class="statuspanel">Operator: svc01</div></td>
+      <td width="20%" data-cua-ref="e23"><div class="statuspanel">CoreServ 4.2</div></td>
+    </tr></tbody></table>
+  </td></tr>
+</tbody></table>
+
+
+<form id="aspnetForm" method="post" action="/postback">
+  <input type="hidden" name="__EVENTTARGET" value="" style="">
+  <input type="hidden" name="__EVENTARGUMENT" value="" style="">
+  <input type="hidden" name="__VIEWSTATE" value="/wEPDwUKMmIJ/HPepx9awcv8yZF7pjampe+Kk8wihEVT2VUbyDlVy4BEHxxA72a4xEJiCG7KC" style="">
+  <input type="hidden" name="__ctx" value="10043" style="">
+</form>
+
+<script type="text/javascript">
+  function openHelp() {
+    // A separate browser window, which is how these applications have always
+    // done lookups and help. Automation that tracks one page does not see it.
+    window.open('/help', 'coreservHelp', 'width=420,height=320,resizable=yes');
+  }
+</script>
+
+
+</body></html>

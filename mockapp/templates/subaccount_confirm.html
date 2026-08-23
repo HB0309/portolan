@@ -1,22 +1,28 @@
 {% extends "_chrome.html" %}
+{% block status %}Transaction complete &nbsp;|&nbsp; Reference {{ reference }}{% endblock %}
 {% block content %}
-<table class="panel" cellpadding="4" cellspacing="0" width="560">
-  <tr><td class="panelhdr" colspan="2">Sub-Account Opened</td></tr>
-  <tr><td colspan="2">
-    <div class="warn"><b>Confirmation</b> — the sub-account has been created.</div>
+<table cellpadding="0" cellspacing="0" border="0" width="600">
+  <tr><td class="caption">Sub-Account Opened</td></tr>
+  <tr><td class="raised" style="padding:10px;">
+
+    <div class="msgwarn"><b>Confirmation</b> &mdash; the sub-account has been created.</div>
+    <br>
+
+    <fieldset class="groupbox">
+      <legend>&nbsp;Transaction Detail&nbsp;</legend>
+      <table cellpadding="3" cellspacing="0" border="0">
+        <tr><td align="right" width="150">Reference Number</td><td><b>{{ reference }}</b></td></tr>
+        <tr><td align="right">Member</td><td>{{ member.member_id }} &mdash; {{ member.name }}</td></tr>
+        <tr><td align="right">Account Type</td><td>{{ account_type }}</td></tr>
+        <tr><td align="right">Nickname</td><td>{{ nickname }}</td></tr>
+        <tr><td align="right">Initial Deposit</td><td>${{ initial_deposit }}</td></tr>
+        <tr><td align="right">Posted By</td><td>{{ session.get('operator', 'svc') }}</td></tr>
+      </table>
+    </fieldset>
+
+    <br>
+    <a class="lnk" href="javascript:__doPostBack('ctl00$navMemberDetail','')">Return to Member Detail</a>
+
   </td></tr>
-  <tr><td align="right" width="160"><font size="1">Reference Number</font></td>
-      <td><b>{{ reference }}</b></td></tr>
-  <tr><td align="right"><font size="1">Member</font></td>
-      <td>{{ member.member_id }} &mdash; {{ member.name }}</td></tr>
-  <tr><td align="right"><font size="1">Account Type</font></td>
-      <td>{{ account_type }}</td></tr>
-  <tr><td align="right"><font size="1">Nickname</font></td>
-      <td>{{ nickname }}</td></tr>
-  <tr><td align="right"><font size="1">Initial Deposit</font></td>
-      <td>${{ initial_deposit }}</td></tr>
 </table>
-<table width="560" cellpadding="4"><tr><td>
-  <a href="/member?id={{ member.member_id }}">Return to Member Detail</a>
-</td></tr></table>
 {% endblock %}

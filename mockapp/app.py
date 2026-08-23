@@ -18,6 +18,7 @@ navigating to the entry point with the flag set.
 
 from __future__ import annotations
 
+import base64
 import os
 import secrets
 import time
@@ -85,9 +86,26 @@ def _apply_query_flags(request: Request, session: dict[str, Any]) -> None:
         session["tenant"] = tenant
 
 
+def _viewstate() -> str:
+    """An inert stand-in for the framework's view state.
+
+    It carries nothing, but its presence is the reason a page in this class of
+    application cannot be reached by constructing a URL: navigation is a form
+    post that echoes this blob back, so every screen is downstream of the one
+    before it.
+    """
+    return "/wEPDwUKM" + base64.b64encode(secrets.token_bytes(48)).decode().rstrip("=")
+
+
 def _ctx(request: Request, session: dict[str, Any], **extra: Any) -> dict[str, Any]:
     tenant = TENANTS[session.get("tenant", DEFAULT_TENANT)]
-    return {"request": request, "t": tenant, "session": session, **extra}
+    return {
+        "request": request,
+        "t": tenant,
+        "session": session,
+        "viewstate": _viewstate(),
+        **extra,
+    }
 
 
 def _render(
@@ -148,6 +166,61 @@ def index(request: Request) -> Response:
 def nav(request: Request) -> Response:
     session = _session(request)
     return _render(request, session, "nav.html")
+
+
+@app.post("/postback")
+def postback(
+    request: Request,
+    # The wire names are the framework's, complete with leading underscores.
+    # They cannot be parameter names -- Pydantic reserves that spelling -- so
+    # they arrive by alias.
+    event_target: str = Form(default="", alias="__EVENTTARGET"),
+    event_argument: str = Form(default="", alias="__EVENTARGUMENT"),
+    ctx: str = Form(default="", alias="__ctx"),
+) -> Response:
+    """Where every javascript: control on a page lands.
+
+    Navigation in this application is not a link with an href to follow -- it is
+    a form post naming the control that raised it. That is faithful to the
+    framework these systems are built on, and it is a genuine obstacle: the URL
+    of a screen tells you nothing about how to get there.
+    """
+    session = _session(request)
+    member = ctx or session.get("current_member", "")
+
+    routes = {
+        "ctl00$navMemberSearch": "/search",
+        "ctl00$navMemberDetail": f"/member?id={member}" if member else "/search",
+        "ctl00$navSignOut": "/logout",
+        "ctl00$tbrSearch": "/search",
+        "ctl00$lnkBackToSearch": "/search",
+        "ctl00$lnkOpenSubAccount": f"/subaccount/new?member={member}",
+    }
+
+    if event_target.startswith("ctl00$grdAccounts$Page"):
+        page = event_target.rsplit("Page", 1)[-1] or "1"
+        target = f"/member?id={member}&page={page}"
+    else:
+        # Toolbar buttons that do nothing are still worth having: real toolbars
+        # are full of them, and an agent has to work out which controls matter.
+        target = routes.get(event_target) or (
+            f"/member?id={member}" if member else "/search"
+        )
+
+    return _persist(RedirectResponse(target, status_code=303), session)
+
+
+@app.get("/help", response_class=HTMLResponse)
+def help_window(request: Request) -> Response:
+    """Opened with window.open, in a separate browser window.
+
+    Deliberately present and deliberately not part of any recorded flow. The
+    Surface abstraction tracks frames within one page and does not follow a new
+    window, so this is a real, documented limitation rather than a hidden one --
+    see REPORT.md section 7.
+    """
+    session = _session(request)
+    return _render(request, session, "help.html")
 
 
 # ---------------------------------------------------------------------------

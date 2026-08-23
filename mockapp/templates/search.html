@@ -1,25 +1,43 @@
 {% extends "_chrome.html" %}
+{% block status %}Enter search criteria and press {{ t.search_button }}{% endblock %}
 {% block content %}
-<table class="panel" cellpadding="4" cellspacing="0" width="520">
-  <tr><td class="panelhdr">Member Search</td></tr>
-  {% if error %}<tr><td><div class="err">{{ error }}</div></td></tr>{% endif %}
-  <tr><td>
+<table cellpadding="0" cellspacing="0" border="0" width="560">
+  <tr><td class="caption">Member Search</td></tr>
+  <tr><td class="raised" style="padding:10px;">
+
+    {% if error %}<div class="msgerr">{{ error }}</div><br>{% endif %}
+
     <form method="post" action="/search">
-    <table cellpadding="3" cellspacing="0" border="0">
-      <tr>
-        <td align="right"><font size="1">Member Number</font></td>
-        <td><input type="text" name="member_id" id="{{ gid('txt') }}" size="18"></td>
-        <td><input type="submit" id="{{ gid('btn') }}" value="{{ t.search_button }}"></td>
-      </tr>
-      <tr>
-        <td align="right"><font size="1">Last Name</font></td>
-        <td colspan="2"><input type="text" name="last_name" id="{{ gid('txt') }}" size="18"></td>
-      </tr>
-    </table>
+    <fieldset class="groupbox">
+      <legend>&nbsp;Search By&nbsp;</legend>
+      <table cellpadding="3" cellspacing="0" border="0">
+        <tr>
+          <td align="right" width="110">Member Number</td>
+          <td><input type="text" name="member_id" id="{{ gid('txt') }}" size="16" maxlength="10"></td>
+          <td rowspan="3" valign="top" style="padding-left:14px;">
+            <input type="submit" id="{{ gid('btn') }}" value="{{ t.search_button }}"><br><br>
+            <input type="button" id="{{ gid('btn') }}" value="Clear">
+          </td>
+        </tr>
+        <tr>
+          <td align="right">Last Name</td>
+          <td><input type="text" name="last_name" id="{{ gid('txt') }}" size="16"></td>
+        </tr>
+        <tr>
+          <td align="right">Tax ID</td>
+          <td><input type="text" name="tax_id" id="{{ gid('txt') }}" size="16" maxlength="11"></td>
+        </tr>
+      </table>
+    </fieldset>
     </form>
+
   </td></tr>
 </table>
-<table width="520" cellpadding="4"><tr><td>
-  <font size="1" color="#66707a">Try 10042, 10043, or 10077. Member 10099 is restricted.</font>
-</td></tr></table>
+
+<br>
+<table width="560" cellpadding="0" cellspacing="0" border="0">
+  <tr><td class="etched" style="padding:6px;">
+    Sample members: 10042, 10043, 10077. Member 10099 is restricted.
+  </td></tr>
+</table>
 {% endblock %}

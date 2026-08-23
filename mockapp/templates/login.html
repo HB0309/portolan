@@ -1,35 +1,54 @@
 {% extends "_chrome.html" %}
+{% block status %}Sign in required{% endblock %}
 {% block content %}
-<table class="panel" cellpadding="4" cellspacing="0" width="420">
-  <tr><td class="panelhdr" colspan="2">Operator Sign In</td></tr>
-  {% if error %}<tr><td colspan="2"><div class="err">{{ error }}</div></td></tr>{% endif %}
-  {% if request.query_params.get('error') == 'expired' %}
-  <tr><td colspan="2"><div class="warn">Your session has expired. Please sign in again.</div></td></tr>
-  {% endif %}
-  <tr><td colspan="2">
+<table cellpadding="0" cellspacing="0" border="0" width="430">
+  <tr><td class="caption">Operator Sign On</td></tr>
+  <tr><td class="raised" style="padding:10px;">
+
+    {% if error %}<div class="msgerr">{{ error }}</div><br>{% endif %}
+    {% if request.query_params.get('error') == 'expired' %}
+    <div class="msgwarn">Your session has timed out. Please sign on again.</div><br>
+    {% endif %}
+
     <form method="post" action="/login">
-    {# Labels live in the adjacent cell. There is no <label for>, which is how
-       these forms are actually built, and is why targeting has to understand
-       proximity rather than markup. #}
+    {# No <label for>. The field is named by the cell to its left and nothing
+       else, which is how these forms have always been built. #}
     <table cellpadding="3" cellspacing="0" border="0">
       <tr>
-        <td align="right"><font size="1">Operator ID</font></td>
-        <td><input type="text" name="operator_id" id="{{ gid('txt') }}" size="24"></td>
+        <td align="right" width="90">Operator ID</td>
+        <td><input type="text" name="operator_id" id="{{ gid('txt') }}" size="20" maxlength="12"></td>
       </tr>
       <tr>
-        <td align="right"><font size="1">Password</font></td>
-        <td><input type="password" name="password" id="{{ gid('txt') }}" size="24"></td>
+        <td align="right">Password</td>
+        <td><input type="password" name="password" id="{{ gid('txt') }}" size="20"></td>
+      </tr>
+      <tr>
+        <td align="right">Branch</td>
+        <td>
+          <select name="branch" id="{{ gid('sel') }}">
+            <option>001 - Main Office</option>
+            <option>014 - Riverbend</option>
+            <option>027 - Northgate</option>
+          </select>
+        </td>
       </tr>
       <tr>
         <td></td>
-        <td><input type="submit" id="{{ gid('btn') }}" value="Sign In"></td>
+        <td style="padding-top:8px;">
+          <input type="submit" id="{{ gid('btn') }}" value="Sign In">
+        </td>
       </tr>
     </table>
     </form>
+
   </td></tr>
 </table>
-<table width="420" cellpadding="4"><tr><td>
-  <font size="1" color="#66707a">Demo application. Any operator ID is accepted; no
-  real credentials are used anywhere in this project.</font>
-</td></tr></table>
+
+<br>
+<table width="430" cellpadding="0" cellspacing="0" border="0">
+  <tr><td class="etched" style="padding:6px;">
+    Demonstration system. Any operator ID is accepted and no real credentials
+    are used anywhere in this project.
+  </td></tr>
+</table>
 {% endblock %}

@@ -167,18 +167,24 @@ it proceeds unattended and returns `{'reference_number': 'SA-714516'}`.
 
 `?tenant=beta` serves the same product configured for a different institution:
 different branding, and two controls renamed. Replaying the alpha recording
-against it without an overlay degrades and then fails:
+against it without an overlay stops at the first step that genuinely diverges:
 
 ```bash
 venv/Scripts/python -m cua replay --capability capabilities/cu.member.read_savings_balance.json \
   --inputs '{"member_id":"10042"}' --entry "http://127.0.0.1:8080/?tenant=beta"
-#   targeting : s1=rung1, s2=rung1, s3=rung1, s4=rung5
-#   DEGRADED  : 1 step(s) resolved below their confidence floor - a drift signal
-#   failure (element_not_found) at step s5
+#   targeting : s1=rung1, s2=rung1, s3=rung1
+#   failure (element_ambiguous) at step s4: 2 controls match button 'Search' in
+#     frame:contentframe > heading:Search By at rung 5; refusing to guess
+#   observed  : button 'Find Member' ...; button 'Clear' ...
 ```
 
-Step 4 dropping to rung 5 is the drift signal, and it appears one step *before*
-the run breaks. With a small overlay instead of a re-recording:
+This tenant renamed the search action, so the recorded name no longer identifies
+one control — and by the time the ladder has loosened enough to match anything,
+it matches *two*. It names both and stops rather than picking one. In a
+back-office where the wrong button moves money, refusing costs one interruption
+and guessing costs a transaction.
+
+With a small overlay instead of a re-recording:
 
 ```bash
 venv/Scripts/python -m cua replay --capability capabilities/cu.member.read_savings_balance.json \

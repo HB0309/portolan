@@ -87,7 +87,11 @@ recovery:
       otherwise proceeding correctly.
     trigger:
       kind: text_present
-      text: "session has expired"
-      match: contains
+      # Matched as a pattern rather than a fixed string: the product words this
+      # as "timed out" on the sign-on screen and "expired" elsewhere, and a
+      # vendor upgrade is as likely to change the wording as anything. Curated
+      # product knowledge is the right place to absorb that.
+      text: "session has (timed out|expired)"
+      match: regex
     strategy: reauth
     max_attempts: 1

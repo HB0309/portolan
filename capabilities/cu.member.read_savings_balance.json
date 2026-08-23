@@ -56,7 +56,7 @@
           },
           {
             "kind": "heading",
-            "value": "Operator Sign In"
+            "value": "Operator Sign On"
           }
         ],
         "ordinal": null,
@@ -65,14 +65,14 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 81.875,
-              "y": 63.0,
-              "width": 192.0,
-              "height": 19.0
+              "x": 119.0,
+              "y": 102.15625,
+              "width": 145.0,
+              "height": 18.0
             }
           }
         ],
-        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Operator ID', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > Operator Sign In to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Operator ID', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > Operator Sign On to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
         "recorded_confidence": 0.8
       },
       "wait": {
@@ -109,7 +109,7 @@
           },
           {
             "kind": "heading",
-            "value": "Operator Sign In"
+            "value": "Operator Sign On"
           }
         ],
         "ordinal": null,
@@ -118,14 +118,14 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 81.875,
-              "y": 113.0,
-              "width": 57.5,
-              "height": 21.0
+              "x": 119.0,
+              "y": 181.15625,
+              "width": 62.1875,
+              "height": 20.0
             }
           }
         ],
-        "robustness_note": "Matched on role plus the accessible name 'Sign In', which is vendor-supplied and survives tenant re-branding of layout and styling. Anchored to contentframe > Operator Sign In to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "robustness_note": "Matched on role plus the accessible name 'Sign In', which is vendor-supplied and survives tenant re-branding of layout and styling. Anchored to contentframe > Operator Sign On to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
         "recorded_confidence": 1.0
       },
       "wait": {
@@ -188,7 +188,7 @@
           },
           {
             "kind": "heading",
-            "value": "Member Search"
+            "value": "Search By"
           }
         ],
         "ordinal": null,
@@ -197,14 +197,14 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 106.078125,
-              "y": 64.0,
-              "width": 150.0,
-              "height": 19.0
+              "x": 149.0,
+              "y": 120.15625,
+              "width": 121.0,
+              "height": 18.0
             }
           }
         ],
-        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Member Number', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > Member Search to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Member Number', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > Search By to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
         "recorded_confidence": 0.8
       },
       "wait": {
@@ -241,7 +241,7 @@
           },
           {
             "kind": "heading",
-            "value": "Member Search"
+            "value": "Search By"
           }
         ],
         "ordinal": null,
@@ -250,14 +250,14 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 262.078125,
-              "y": 63.0,
-              "width": 58.25,
-              "height": 21.0
+              "x": 287.0,
+              "y": 120.15625,
+              "width": 62.859375,
+              "height": 20.0
             }
           }
         ],
-        "robustness_note": "Matched on role plus the accessible name 'Search', which is vendor-supplied and survives tenant re-branding of layout and styling. Anchored to contentframe > Member Search to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "robustness_note": "Matched on role plus the accessible name 'Search', which is vendor-supplied and survives tenant re-branding of layout and styling. Anchored to contentframe > Search By to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
         "recorded_confidence": 1.0
       },
       "wait": {
@@ -331,10 +331,10 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 217.0,
-              "y": 148.0,
-              "width": 430.0,
-              "height": 21.0
+              "x": 206.0,
+              "y": 205.15625,
+              "width": 54.9375,
+              "height": 18.0
             }
           }
         ],
@@ -452,8 +452,8 @@
       "description": "Sessions expire on a fixed idle timeout and bounce to the sign-in screen. Re-authenticating and resuming is preferable to failing a run that was otherwise proceeding correctly.",
       "trigger": {
         "kind": "text_present",
-        "text": "session has expired",
-        "match": "contains",
+        "text": "session has (timed out|expired)",
+        "match": "regex",
         "target": null,
         "scope": [],
         "description": ""
@@ -471,10 +471,10 @@
     "notes": "All steps are read-only or reversible."
   },
   "provenance": {
-    "discovery_run_id": "discovery-20260820-100251-fbf6b6",
+    "discovery_run_id": "discovery-20260823-050746-b2ef0a",
     "provider": "scripted",
     "model": "scripted-0",
-    "recorded_at": "2026-08-20T10:02:53.981302Z",
+    "recorded_at": "2026-08-23T05:07:49.318325Z",
     "steps_explored": 5,
     "human_assisted": false,
     "human_action_count": 0

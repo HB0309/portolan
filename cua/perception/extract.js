@@ -129,17 +129,36 @@
     return "";
   };
 
-  /* Nearest panel title or heading above this element. */
+  /* Which panel of the screen is this control in?
+   *
+   * Sections are what let a descriptor say "the Search button in Member Search"
+   * rather than "one of the four Search buttons", and they are what a generated
+   * checkpoint asserts on. Getting them wrong is expensive in a way that is not
+   * obvious: with no section, a checkpoint marker falls back to whatever text is
+   * around, which on an application with a menu bar and a toolbar means chrome
+   * that appears on every page -- an assertion that passes everywhere.
+   *
+   * The cues are tried structural-first, because markup that means "this names
+   * the group" is portable, while a class name is one app's convention. Class
+   * names are still consulted last, since legacy markup often has nothing else.
+   */
   const sectionOf = (el) => {
+    const fieldset = el.closest ? el.closest("fieldset") : null;
+    if (fieldset) {
+      const legend = text(fieldset.querySelector("legend"));
+      if (legend && legend.length <= 80) return legend;
+    }
+
     let node = el;
     while (node && node !== document.body) {
       const table = node.closest ? node.closest("table") : null;
       if (!table) break;
-      const header = table.querySelector(".panelhdr, th, caption");
+      const header = table.querySelector("caption, th, .caption, .panelhdr");
       const t = text(header);
       if (t && t.length <= 80) return t;
       node = table.parentElement;
     }
+
     let sibling = el.previousElementSibling;
     while (sibling) {
       if (/^h[1-6]$/i.test(sibling.tagName)) return text(sibling);

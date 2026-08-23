@@ -1,15 +1,17 @@
 {% extends "_chrome.html" %}
+{% block status %}Search returned no records{% endblock %}
 {% block content %}
-{# A legitimate business outcome, not a malfunction. The wording here is what a
-   declared outcome detector matches on. #}
-<table class="panel" cellpadding="4" cellspacing="0" width="520">
-  <tr><td class="panelhdr">Member Search</td></tr>
-  <tr><td>
-    <div class="warn">
-      <b>No member found</b> for member number {{ member_id or '(blank)' }}.
+<table cellpadding="0" cellspacing="0" border="0" width="560">
+  <tr><td class="caption">Member Search</td></tr>
+  <tr><td class="raised" style="padding:10px;">
+    {# A legitimate business outcome, not a malfunction. The wording here is
+       what a declared outcome detector matches on. #}
+    <div class="msgwarn">
+      <b>No member found</b> for member number {{ member_id or '(blank)' }}.<br>
       Verify the number and try again.
     </div>
+    <br>
+    <a class="lnk" href="javascript:__doPostBack('ctl00$lnkBackToSearch','')">Back to Search</a>
   </td></tr>
-  <tr><td><a href="/search">Back to Search</a></td></tr>
 </table>
 {% endblock %}

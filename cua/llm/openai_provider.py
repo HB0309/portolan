@@ -21,7 +21,12 @@ DEFAULT_MODEL = "gpt-4o"
 class OpenAIProvider:
     name = "openai"
 
-    def __init__(self, api_key: str | None = None, model: str | None = None) -> None:
+    def __init__(
+        self,
+        api_key: str | None = None,
+        model: str | None = None,
+        base_url: str | None = None,
+    ) -> None:
         try:
             from openai import AsyncOpenAI
         except ImportError as exc:  # pragma: no cover
@@ -34,7 +39,15 @@ class OpenAIProvider:
                 "--provider scripted to exercise the loop without a model."
             )
         self.model = model or os.environ.get("OPENAI_MODEL") or DEFAULT_MODEL
-        self._client = AsyncOpenAI(api_key=key)
+
+        # Several providers -- Google's Gemini, Groq, OpenRouter, a local
+        # Ollama -- expose an OpenAI-compatible chat-completions endpoint with
+        # tool calling. Pointing this adapter at one is a base URL away, which
+        # makes a free tier usable for a smoke test without a fourth adapter to
+        # maintain. Tool-call fidelity varies between them, so a run that works
+        # here is evidence the loop is sound, not that any model is.
+        base_url = base_url or os.environ.get("OPENAI_BASE_URL")
+        self._client = AsyncOpenAI(api_key=key, base_url=base_url or None)
 
     async def decide(
         self,

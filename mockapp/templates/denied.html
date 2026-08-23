@@ -1,13 +1,15 @@
 {% extends "_chrome.html" %}
+{% block status %}Access denied{% endblock %}
 {% block content %}
-<table class="panel" cellpadding="4" cellspacing="0" width="520">
-  <tr><td class="panelhdr">Member Detail</td></tr>
-  <tr><td>
-    <div class="err">
-      <b>Insufficient privileges</b> — your operator role is not permitted to view
-      member {{ member_id }}. Contact an administrator if you require access.
+<table cellpadding="0" cellspacing="0" border="0" width="560">
+  <tr><td class="caption">Member Detail</td></tr>
+  <tr><td class="raised" style="padding:10px;">
+    <div class="msgerr">
+      <b>Insufficient privileges</b> &mdash; your operator role is not permitted to
+      view member {{ member_id }}.<br>Contact an administrator if you require access.
     </div>
+    <br>
+    <a class="lnk" href="javascript:__doPostBack('ctl00$lnkBackToSearch','')">Back to Search</a>
   </td></tr>
-  <tr><td><a href="/search">Back to Search</a></td></tr>
 </table>
 {% endblock %}
