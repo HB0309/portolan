@@ -35,9 +35,26 @@ from cua.schema.capability import ElementDescriptor
 from cua.schema.results import DiscoveryResult, FailureCategory, FailureReport
 from cua.surfaces.base import ActionRequest, Element, Observation, Surface, SurfaceError
 
-#: Signature of the human-escalation hook. Returns True if a human approved the
-#: action and it should proceed.
-InterventionHook = Callable[[str, dict[str, Any]], Awaitable[bool]]
+@dataclass
+class InterventionOutcome:
+    """How an escalation was resolved.
+
+    ``approved`` alone used to be the whole signal, and that collapsed two
+    different answers into one: "go ahead and do this yourself" and "I already
+    did this myself, don't do it again" both came back as ``True``. The
+    difference matters more than almost anything else in this system --
+    conflating them meant a human clicking the real "Open Sub-Account" button
+    during a handoff was followed by the automation clicking the same button a
+    second time, on a page it no longer even matched. ``performed_by_human``
+    is what lets the caller skip re-acting.
+    """
+
+    approved: bool
+    performed_by_human: bool = False
+
+
+#: Signature of the human-escalation hook.
+InterventionHook = Callable[[str, dict[str, Any]], Awaitable[InterventionOutcome]]
 
 
 @dataclass
@@ -88,6 +105,10 @@ class DiscoveryOrchestrator:
         self.provider_calls = 0
         self.input_tokens = 0
         self.output_tokens = 0
+        #: Total time spent waiting on a human to answer an escalation, across
+        #: the run. Excluded from the wall-clock budget below -- see
+        #: _raise_intervention for why.
+        self._human_wait_seconds = 0.0
 
     async def run(
         self,
@@ -136,7 +157,7 @@ class DiscoveryOrchestrator:
         deadline = started + limits.wall_clock_seconds
 
         for step_index in range(1, limits.max_steps + 1):
-            if time.monotonic() > deadline:
+            if time.monotonic() > deadline + self._human_wait_seconds:
                 return self._failed(
                     trace,
                     run_id,
@@ -314,7 +335,7 @@ class DiscoveryOrchestrator:
 
         human_approved = False
         if verdict.disposition is Disposition.ESCALATE:
-            human_approved = await self._raise_intervention(
+            escalation = await self._raise_intervention(
                 "irreversible_action",
                 {
                     "step": step_index,
@@ -324,7 +345,8 @@ class DiscoveryOrchestrator:
                     "url": await self.surface.current_url(),
                 },
             )
-            if not human_approved:
+            human_approved = escalation.approved
+            if not escalation.approved:
                 self.evidence.log(
                     "policy.blocked", step=step_index, reason=verdict.reason, rule=verdict.rule
                 )
@@ -333,6 +355,38 @@ class DiscoveryOrchestrator:
                     call.name,
                     arguments,
                     f"BLOCKED by policy: {verdict.reason}. A human must approve this.",
+                )
+            if escalation.performed_by_human:
+                # The action already happened, live, at the operator's hand.
+                # Acting again would either fail on a stale reference to a
+                # control that no longer exists on whatever page the human's
+                # click produced, or -- worse, if timing let the old element
+                # still resolve -- actually repeat an irreversible transaction.
+                # observation_after is left for the caller to fill in with its
+                # own re-observe, same as every other step here; there is no
+                # reason to perceive the screen twice.
+                self.evidence.log(
+                    "action.performed_by_operator",
+                    step=step_index,
+                    action=action_type,
+                    target=element.describe() if element else arguments.get("url"),
+                )
+                step = DiscoveryStep(
+                    index=step_index,
+                    tool=call.name,
+                    arguments=arguments,
+                    intent=call.reasoning
+                    or f"{call.name} {arguments.get('target_description', '')}",
+                    element=element,
+                    observation_before=observation,
+                    observation_after=None,
+                    outcome="performed by the operator during handoff",
+                    navigated=True,
+                    risk=verdict.risk.value,
+                    human_approved=True,
+                )
+                return step, summarize_step(
+                    step_index, call.name, arguments, "performed by the operator"
                 )
         elif verdict.disposition is Disposition.DENY:
             self.evidence.log(
@@ -403,13 +457,32 @@ class DiscoveryOrchestrator:
         )
         return step, summarize_step(step_index, call.name, arguments, outcome)
 
-    async def _raise_intervention(self, reason: str, context: dict[str, Any]) -> bool:
+    async def _raise_intervention(
+        self, reason: str, context: dict[str, Any]
+    ) -> InterventionOutcome:
         self.evidence.log("escalation.raised", reason=reason, context=context)
         if self.on_intervention is None:
-            return False
-        approved = await self.on_intervention(reason, context)
-        self.evidence.log("escalation.resolved", reason=reason, approved=approved)
-        return approved
+            return InterventionOutcome(approved=False)
+        # The wall-clock budget below exists to catch automation that loops
+        # without making progress. A human deciding whether to approve an
+        # irreversible action is the opposite of that -- found live, when a
+        # real operator took about ten minutes to get back to an escalation
+        # (nothing wrong with that; that is what "attended" means) and the
+        # run failed on a timeout immediately after they resolved it, having
+        # done everything right. The broker already has its own, much longer
+        # timeout for an unanswered escalation (900s); this only needs to stop
+        # a real human's genuine response time from silently eating the
+        # budget meant for the automation loop.
+        waited_from = time.monotonic()
+        outcome = await self.on_intervention(reason, context)
+        self._human_wait_seconds += time.monotonic() - waited_from
+        self.evidence.log(
+            "escalation.resolved",
+            reason=reason,
+            approved=outcome.approved,
+            performed_by_human=outcome.performed_by_human,
+        )
+        return outcome
 
     def _failed(
         self,

@@ -16,7 +16,7 @@ from typing import Any
 import typer
 from dotenv import load_dotenv
 
-from cua.discovery import CapabilityRecorder, DiscoveryOrchestrator, new_run_id
+from cua.discovery import CapabilityRecorder, DiscoveryOrchestrator, InterventionOutcome, new_run_id
 from cua.escalation.broker import EscalationBroker
 from cua.escalation.models import InterventionRequest, OperatorDecision, ResumeMode
 from cua.evidence import EvidenceRecorder
@@ -156,7 +156,7 @@ def discover(
             session, evidence, run_id=run_id, auto_responder=responder, attended=attended
         )
 
-        async def intervene(reason: str, context: dict[str, Any]) -> bool:
+        async def intervene(reason: str, context: dict[str, Any]) -> InterventionOutcome:
             if attended:
                 typer.echo(
                     f"\n  escalation: {reason} - respond at "
@@ -170,7 +170,10 @@ def discover(
                     f"so the action is refused"
                 )
             decision = await broker.raise_intervention(reason, context)
-            return decision.mode in {ResumeMode.APPROVE, ResumeMode.PERFORMED_MANUALLY}
+            return InterventionOutcome(
+                approved=decision.mode in {ResumeMode.APPROVE, ResumeMode.PERFORMED_MANUALLY},
+                performed_by_human=decision.mode is ResumeMode.PERFORMED_MANUALLY,
+            )
 
         server = None
         if attended:
@@ -222,6 +225,14 @@ def discover(
                 f"{len(capability.outcomes)} declared outcome(s)"
             )
             typer.echo(f"  tokens: {result.input_tokens} in / {result.output_tokens} out")
+            if trace.collected:
+                # Terminal-only, for whoever just watched the run: the
+                # capability itself never gets this, by design (Hard Rule #6 --
+                # caller data is never a literal in the artifact). Printing it
+                # here is the only place a value collected during discovery is
+                # visible at all; otherwise it is captured, used to prove the
+                # run succeeded, and then discarded when the process exits.
+                typer.echo(f"  collected: {trace.collected}")
             typer.echo(f"  evidence: {EVIDENCE_DIR / run_id}\n")
             return 0
         finally:

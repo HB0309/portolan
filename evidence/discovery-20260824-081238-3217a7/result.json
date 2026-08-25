@@ -1,0 +1,59 @@
+{
+  "succeeded": true,
+  "run_id": "discovery-[REDACTED]-3217a7",
+  "goal": "look up member [REDACTED] and read their current savings balance",
+  "provider": "openai",
+  "model": "openai/gpt-oss-120b",
+  "steps_taken": 6,
+  "provider_calls": 7,
+  "input_tokens": 17605,
+  "output_tokens": 975,
+  "capability_path": "capabilities\\cu.member.read_savings_balance.json",
+  "capability_id": "cu.member.read_savings_balance",
+  "failure": null,
+  "escalations": [],
+  "evidence": [
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-3217a7\\steps\\01-before.png",
+      "note": "01-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-3217a7\\steps\\02-before.png",
+      "note": "02-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-3217a7\\steps\\03-before.png",
+      "note": "03-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-3217a7\\steps\\04-before.png",
+      "note": "04-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-3217a7\\steps\\05-before.png",
+      "note": "05-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-3217a7\\steps\\06-before.png",
+      "note": "06-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-3217a7\\steps\\07-before.png",
+      "note": "07-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-3217a7\\steps\\final.png",
+      "note": "final"
+    }
+  ],
+  "started_at": "2026-08-24T08:13:48.339225Z",
+  "duration_ms": 69281
+}

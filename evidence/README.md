@@ -14,6 +14,8 @@ up being a chat log that cannot be replayed.
 |---|---|---|---|
 | `discovery-20260823-050746-b2ef0a` | discovery | **succeeded** | recorded `cu.member.read_savings_balance` in 5 steps |
 | `discovery-20260823-050749-7ef011` | discovery | **succeeded** | recorded `cu.member.open_subaccount` in 10 steps |
+| `discovery-20260824-080430-631888` | discovery | **failed** | stopped: openai call failed: Error code: 429 - {'error': {'message': 'Rate limit reached for model  |
+| `discovery-20260824-081238-3217a7` | discovery | **succeeded** | recorded `cu.member.read_savings_balance` in 6 steps |
 | `replay-20260823-050753-672eb3` | replay | **success** | outputs `{'savings_balance': '$4,102.55'}` |
 | `replay-20260823-050757-16681e` | replay | **success** | outputs `{'savings_balance': '$22,981.73'}` |
 | `replay-20260823-050801-6c955e` | replay | **business_outcome** | `MEMBER_NOT_FOUND` |
@@ -28,6 +30,8 @@ up being a chat log that cannot be replayed.
 | `replay-20260823-050843-f1097a` | replay | **success** | outputs `{'reference_number': 'SA-994123'}` |
 | `replay-20260823-050849-437813` | replay | **business_outcome** | `VALIDATION_REJECTED` |
 | `replay-20260823-050854-155106` | replay | **failure** | `input_invalid` |
+| `replay-20260824-081410-75d157` | replay | **success** | outputs `{'savings_balance': '$4,102.55'}` |
+| `replay-20260824-081415-8e4038` | replay | **success** | outputs `{'savings_balance': '$22,981.73'}` |
 
 ## Note on the discovery runs here
 

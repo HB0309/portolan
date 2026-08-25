@@ -370,16 +370,26 @@ What I would build next, in order:
 
 ### On the discovery run
 
-> **PENDING — must be resolved .** The runs currently in
-> `evidence/` were produced by the scripted provider. A genuine model-driven
-> discovery run has not been recorded yet, because no API key was configured
-> while this was built. The command is unchanged apart from dropping
-> `--provider scripted`, and the run must be committed under
-> `evidence/discovery-*` before this is sent. Leaving this note in rather than
-> quietly implying otherwise: this project is explicit that the discovery run has
-> to be real, and a scripted run is not one.
+`evidence/discovery-20260824-081238-3217a7` is a genuine model-driven run: `openai/gpt-oss-120b`,
+served through Groq, given the goal in plain language and nothing else. Six steps, seven model
+calls, no script.
 
-The scripted provider exists so the loop, the guardrails and the recorder can be
-tested deterministically without a key, and so anyone without one can run the
-full demo path. It proves the plumbing, not the agent's judgment, and every place
-it can be selected says so.
+It found a real gap on the way. The model's own stated reasoning for a step —
+*"Click Search to retrieve member 10042's details"* — restated the actual member
+number, because that is what a model does when it explains itself in English.
+The scripted provider used everywhere else in this project never does that; its
+canned explanations were written with no real value to restate, so this path
+had never been exercised. The recorder's own safety sweep, which scans every
+recorded step for a literal caller value, correctly refused to emit the
+capability — and then discarded the whole run, because nothing parameterized
+the intent text the same way step actions already were. `_scrub_intent` closes
+that gap: the recorded step now reads *"Click Search to retrieve member
+`{{param.member_id}}`'s details"* — honest about what happened, without the
+literal. Replayed twice afterward, once for the member the run recorded and
+once for a different one, both succeed at rung 1 on every step.
+
+The scripted provider still exists so the loop, the guardrails and the recorder
+can be tested deterministically without a key, and so anyone without one can
+run the full demo path. It proves the plumbing, not a model's judgment, and
+every place it can be selected says so. But it is not what produced this
+artifact.

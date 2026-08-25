@@ -4,6 +4,7 @@ from cua.discovery.orchestrator import (
     DiscoveryOrchestrator,
     DiscoveryStep,
     DiscoveryTrace,
+    InterventionOutcome,
     new_run_id,
 )
 from cua.discovery.recorder import CapabilityRecorder, RecorderError, slugify
@@ -14,6 +15,7 @@ __all__ = [
     "DiscoveryOrchestrator",
     "DiscoveryStep",
     "DiscoveryTrace",
+    "InterventionOutcome",
     "RecorderError",
     "new_run_id",
     "slugify",

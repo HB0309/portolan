@@ -16,7 +16,7 @@ import pytest
 from cua.discovery.orchestrator import DiscoveryStep, DiscoveryTrace
 from cua.discovery.recorder import CapabilityRecorder, RecorderError, _distinguishing_text
 from cua.schema.capability import ExtractAction, TypeTextAction
-from cua.surfaces.base import Element, Observation
+from cua.surfaces.base import Element, Observation, Rect
 
 
 def element(role, name="", hint="", section="", row="", frame=("contentframe",)):
@@ -100,6 +100,172 @@ class TestValueParameterisation:
         ref = recorder._value_ref("Savings", {"member_id": "10042"})
         assert ref.kind == "literal"
         assert ref.literal == "Savings"
+
+
+class TestIntentScrubbing:
+    """A real model restates the value it is working with when explaining
+    itself -- the scripted stand-in used elsewhere in these tests never does,
+    because its canned explanations were written with no real value to
+    restate. Found by running a real model against Groq: it wrote "Click
+    Search to retrieve member 10042's details" as its stated reason, and the
+    recorder's own safety sweep correctly refused to emit a capability with
+    that literal in it -- discarding an otherwise-valid run. Scrubbing the
+    intent the same way step values are scrubbed is what saves it.
+
+    The same substitution -- ``_scrub_text`` -- turned out to be needed in a
+    second place too: see ``TestFallbackTextScrubbing`` below.
+    """
+
+    def test_a_caller_value_in_the_models_own_words_is_parameterized(self, recorder):
+        text = recorder._scrub_text(
+            "Click Search to retrieve member 10042's details",
+            {"member_id": "10042"},
+        )
+        assert "10042" not in text
+        assert "{{param.member_id}}" in text
+
+    def test_intent_with_no_caller_value_is_unchanged(self, recorder):
+        text = recorder._scrub_text(
+            "Sign in to reach the member search screen", {"member_id": "10042"}
+        )
+        assert text == "Sign in to reach the member search screen"
+
+    def test_a_scrubbed_intent_survives_the_final_safety_sweep(self, recorder):
+        """The end-to-end case: the run that used to be discarded now records."""
+        trace = DiscoveryTrace(
+            goal="read a balance",
+            entry_point="http://127.0.0.1:8080/",
+            inputs={"member_id": "10042"},
+            outputs=["savings_balance"],
+        )
+        after = observation(element("cell", name="x", section="Member Detail"))
+        trace.steps = [
+            DiscoveryStep(
+                index=1, tool="click",
+                arguments={}, intent="Click Search to retrieve member 10042's details",
+                element=element("button", name="Search", section="Search By"),
+                observation_before=after, observation_after=after, outcome="clicked",
+            ),
+        ]
+        capability = recorder.record(
+            trace, capability_id="cu.test", name="t", description="d",
+            run_id="r", provider="groq", model="openai/gpt-oss-120b",
+        )
+        assert "10042" not in capability.step("s1").intent
+        assert "{{param.member_id}}" in capability.step("s1").intent
+
+
+class TestFallbackTextScrubbing:
+    """Found live, driven by a human through the operator console: the model
+    retried an ``extract`` call three times hunting for a reference number and,
+    on one of those tries, targeted the "Initial Deposit" cell instead. The
+    *targeted* cell was labeled correctly -- that part of the descriptor was
+    never the bug -- but ``describe_element`` also folds the whole containing
+    table row into a ``FallbackHint`` for resilience against layout drift, and
+    that row held more than one field ("Initial Deposit $500"). The caller's
+    ``initial_deposit`` value rode along in the fallback text even though the
+    step never meant to touch that value, and the safety sweep correctly
+    refused to emit the capability. A deterministic replay of the same flow
+    with the scripted provider never mis-targets a cell, so this had no test
+    until a real model produced it.
+    """
+
+    def test_a_caller_value_in_a_fallback_row_is_parameterized(self, recorder):
+        el = element(
+            "cell", name="SA-423213", section="Transaction Detail",
+            row="Initial Deposit $500",
+        )
+        descriptor = recorder.describe_element(el, {"initial_deposit": "500"})
+        fallback_values = [f.value for f in descriptor.fallbacks]
+        assert not any("500" in v for v in fallback_values)
+        assert any("{{param.initial_deposit}}" in v for v in fallback_values)
+
+    def test_a_caller_value_quoted_from_a_label_hint_is_parameterized(self, recorder):
+        """The robustness note quotes the label a cell was matched on, and a
+        label can itself contain the value being read (e.g. an amount column
+        whose header restates a figure). Contrived here to exercise the note's
+        own scrub rather than rely on reproducing the exact live label text.
+        """
+        el = element("cell", name="", hint="Amount 500", section="Transaction Detail")
+        descriptor = recorder.describe_element(el, {"initial_deposit": "500"})
+        assert "500" not in descriptor.robustness_note
+        assert "{{param.initial_deposit}}" in descriptor.robustness_note
+
+
+class TestBBoxCoordinatesAreNotCallerData:
+    """Found live, a second time, over the same input: a capability was
+    refused for 'initial_deposit' = "500" that was not a leak at all. An
+    unrelated field's positional FallbackHint had ``y: 500.0`` -- a
+    completely ordinary pixel coordinate -- and the safety sweep used to
+    substring-match against the step's raw serialized JSON, where a float
+    500.0 renders as the text "500.0" and trips the same check a real leak
+    would. Caller data can only ever reach a step as a string (every value
+    that flows through _value_ref or _scrub_text ends up as text, never a
+    bare number), so a short numeric input coincidentally matching some
+    element's x/y/width/height is not a rare accident -- it is close to
+    certain over enough steps on a real screen.
+    """
+
+    def test_a_coincidental_bbox_coordinate_does_not_trip_the_guard(self, recorder):
+        el = Element(
+            ref="e1", role="textbox", name="", label_hint="Nickname",
+            section="New Sub-Account", frame_path=("contentframe",),
+            rect=Rect(x=120.0, y=500.0, width=180.0, height=22.0),
+        )
+        descriptor = recorder.describe_element(el, {"initial_deposit": "500"})
+        assert any(f.kind.value == "bbox" and f.bbox.y == 500.0 for f in descriptor.fallbacks)
+
+        trace = DiscoveryTrace(
+            goal="open a sub-account",
+            entry_point="http://127.0.0.1:8080/",
+            inputs={"initial_deposit": "500"},
+            outputs=[],
+        )
+        after = observation(el)
+        trace.steps = [
+            DiscoveryStep(
+                index=1, tool="click", arguments={}, intent="Focus the nickname field",
+                element=el, observation_before=after, observation_after=after,
+                outcome="clicked",
+            ),
+        ]
+        # Must not raise: nothing about this step actually contains the
+        # caller's deposit amount as text, only as an unrelated coordinate.
+        capability = recorder.record(
+            trace, capability_id="cu.test", name="t", description="d",
+            run_id="r", provider="scripted", model="scripted",
+        )
+        assert capability.step("s1").target is not None
+
+    def test_a_real_leak_in_a_string_field_is_still_caught(self, recorder):
+        """The regression guard for the guard: narrowing the sweep to string
+        leaves must not stop catching an actual leak. A cell with no
+        label_hint is identified by its own text (the D13 shape) -- the one
+        descriptor field that is never scrubbed, since scrubbing the
+        accessible name used for matching would break targeting rather than
+        protect data. That field is exactly where a real leak must still be
+        caught.
+        """
+        el = element("cell", name="500", section="Transaction Detail")
+        trace = DiscoveryTrace(
+            goal="open a sub-account",
+            entry_point="http://127.0.0.1:8080/",
+            inputs={"initial_deposit": "500"},
+            outputs=[],
+        )
+        after = observation(el)
+        trace.steps = [
+            DiscoveryStep(
+                index=1, tool="click", arguments={}, intent="Read the deposit amount",
+                element=el, observation_before=after, observation_after=after,
+                outcome="clicked",
+            ),
+        ]
+        with pytest.raises(RecorderError):
+            recorder.record(
+                trace, capability_id="cu.test", name="t", description="d",
+                run_id="r", provider="scripted", model="scripted",
+            )
 
 
 class TestCheckpointMarkers:

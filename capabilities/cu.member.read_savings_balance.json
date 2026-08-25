@@ -26,19 +26,19 @@
       "name": "savings_balance",
       "type": "string",
       "description": "Savings balance as displayed by the application.",
-      "produced_by_step": "s5",
+      "produced_by_step": "s6",
       "sensitive": false
     }
   ],
   "steps": [
     {
       "id": "s1",
-      "intent": "The operator id is required before the servicing console will open.",
+      "intent": "Enter an operator ID to sign into the system",
       "action": {
         "type": "type_text",
         "value": {
           "kind": "literal",
-          "literal": "svc01",
+          "literal": "demo",
           "param": null,
           "template": null
         },
@@ -93,7 +93,67 @@
     },
     {
       "id": "s2",
-      "intent": "Sign in to reach the member search screen.",
+      "intent": "Enter password to sign in as demo operator",
+      "action": {
+        "type": "type_text",
+        "value": {
+          "kind": "literal",
+          "literal": "demo",
+          "param": null,
+          "template": null
+        },
+        "clear_first": true
+      },
+      "target": {
+        "role": "textbox",
+        "accessible_name": "Password",
+        "name_match": "normalized",
+        "name_source": "adjacent_label",
+        "anchors": [
+          {
+            "kind": "frame",
+            "value": "contentframe"
+          },
+          {
+            "kind": "heading",
+            "value": "Operator Sign On"
+          }
+        ],
+        "ordinal": null,
+        "fallbacks": [
+          {
+            "kind": "bbox",
+            "value": "",
+            "bbox": {
+              "x": 119.0,
+              "y": 126.15625,
+              "width": 145.0,
+              "height": 18.0
+            }
+          }
+        ],
+        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Password', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > Operator Sign On to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "recorded_confidence": 0.8
+      },
+      "wait": {
+        "settle_ms": 250,
+        "timeout_ms": 10000,
+        "await_navigation": false,
+        "until": null
+      },
+      "checkpoint": null,
+      "recovery_ids": [
+        "dismiss_system_notice",
+        "wait_out_transient_slowness",
+        "reauthenticate_after_timeout"
+      ],
+      "risk": "safe",
+      "min_confidence": 0.7,
+      "approved_risky": false
+    },
+    {
+      "id": "s3",
+      "intent": "Click Sign In to log into the system before searching for the member",
       "action": {
         "type": "click"
       },
@@ -135,7 +195,7 @@
         "until": null
       },
       "checkpoint": {
-        "id": "c2",
+        "id": "c3",
         "description": "Reached the 'Member Search' state.",
         "assertions": [
           {
@@ -164,8 +224,8 @@
       "approved_risky": false
     },
     {
-      "id": "s3",
-      "intent": "Enter the member number the caller supplied so the lookup targets them.",
+      "id": "s4",
+      "intent": "Enter the member ID to search for the member's account",
       "action": {
         "type": "type_text",
         "value": {
@@ -224,8 +284,8 @@
       "approved_risky": false
     },
     {
-      "id": "s4",
-      "intent": "Run the search to reach the member's detail screen.",
+      "id": "s5",
+      "intent": "Click Search to retrieve member {{param.member_id}} details",
       "action": {
         "type": "click"
       },
@@ -267,7 +327,7 @@
         "until": null
       },
       "checkpoint": {
-        "id": "c4",
+        "id": "c5",
         "description": "Reached the 'Member Detail' state.",
         "assertions": [
           {
@@ -296,8 +356,8 @@
       "approved_risky": false
     },
     {
-      "id": "s5",
-      "intent": "The balance summary panel carries the current savings balance the caller asked for.",
+      "id": "s6",
+      "intent": "Extract the current savings balance value for the member as required by the goal",
       "action": {
         "type": "extract",
         "output": "savings_balance",
@@ -471,11 +531,11 @@
     "notes": "All steps are read-only or reversible."
   },
   "provenance": {
-    "discovery_run_id": "discovery-20260823-050746-b2ef0a",
-    "provider": "scripted",
-    "model": "scripted-0",
-    "recorded_at": "2026-08-23T05:07:49.318325Z",
-    "steps_explored": 5,
+    "discovery_run_id": "discovery-20260824-081238-3217a7",
+    "provider": "openai",
+    "model": "openai/gpt-oss-120b",
+    "recorded_at": "2026-08-24T08:13:48.345561Z",
+    "steps_explored": 6,
     "human_assisted": false,
     "human_action_count": 0
   },

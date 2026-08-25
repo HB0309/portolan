@@ -25,6 +25,7 @@ from cua.escalation.models import (
     options_for,
 )
 from cua.evidence.recorder import EvidenceRecorder
+from cua.session.control import ControlOwner
 from cua.session.manager import SessionManager
 
 
@@ -161,8 +162,38 @@ class EscalationBroker:
 
     async def take_control(self, intervention_id: str) -> InterventionRequest:
         request = self.requests[intervention_id]
+        if self.session.owner is not ControlOwner.BLOCKED:
+            # A duplicate /take POST -- a double-click, a browser resubmitting
+            # the request on reload, two requests racing each other. The
+            # session control FSM only allows BLOCKED -> HUMAN once; calling
+            # hand_to_human() again while already HUMAN raised a
+            # ControlViolation straight out to an unhandled 500, which a real
+            # operator hit live. This is asyncio-safe without a lock: the
+            # mutation inside hand_to_human() (control.grant_to_human()) runs
+            # synchronously before its first await, so whichever request gets
+            # here first has already flipped the owner by the time a second,
+            # concurrently-arriving request reaches this check.
+            return request
         await self.session.hand_to_human()
+        # Control has genuinely transferred the moment hand_to_human() returns
+        # -- flip status immediately, before anything else. It used to be set
+        # after the screenshot refresh below, which meant the console's
+        # rendered state stayed stale (status still OPEN, "Take control" still
+        # showing) for however long that screenshot capture took: a real CDP
+        # round trip on top of the watcher install hand_to_human() itself just
+        # did, not free. Found live: an operator reloaded mid-request, out of
+        # exactly that gap, and landed on a response still built from the
+        # pre-handoff state -- correct given what the server actually knew at
+        # that instant, but indistinguishable from the click having failed.
         request.status = InterventionStatus.IN_CONTROL
+        # The screenshot on this request so far is still the one taken when
+        # the escalation was *raised* -- before the operator did anything.
+        # Nothing ever refreshed it before D25, so every render kept showing
+        # that same pre-handoff frame forever. This capture is what fixes
+        # that; it no longer gates the status update above, only the picture.
+        snapshot = await self.session.snapshot_context(f"{intervention_id}-control-taken")
+        request.screenshot = snapshot["screenshot"]
+        request.url = snapshot["url"]
         return request
 
     def resolve(self, intervention_id: str, decision: OperatorDecision) -> None:

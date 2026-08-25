@@ -1,0 +1,23 @@
+{
+  "id": "iv-780c43d8",
+  "run_id": "discovery-[REDACTED]-237404",
+  "reason": "agent_stuck",
+  "capability": null,
+  "goal": "look up member [REDACTED] and read their current savings balance",
+  "step_id": "6",
+  "step_intent": null,
+  "expected": "",
+  "observed": "Current operator lacks permission to view member details; cannot retrieve savings balance.",
+  "url": "http://127.0.0.1:8080/?inject=permission_denied",
+  "screenshot": "evidence\\discovery-[REDACTED]-237404\\steps\\intervention-1.png",
+  "resume_options": [
+    "performed_manually",
+    "abort"
+  ],
+  "status": "resolved",
+  "raised_at": "2026-08-24T17:48:31.079700Z",
+  "resolved_at": "2026-08-24T17:48:31.081496Z",
+  "resolution": "abort",
+  "operator_note": "unattended run: the intervention was recorded but there is no operator channel to answer it",
+  "human_actions": 0
+}

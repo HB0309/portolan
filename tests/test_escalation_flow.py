@@ -107,10 +107,31 @@ async def test_operator_takes_the_live_session_and_hands_it_back(tmp_path):
         assert request.reason in page
         assert "Take control of the live session" in page
 
+        # The screenshot on the request right now is the one taken when the
+        # escalation was raised -- before the operator has done anything.
+        screenshot_before_control = request.screenshot
+        assert screenshot_before_control
+
         # Take control over HTTP, exactly as the operator would.
         await console.post(f"/take/{request.id}")
         assert session.owner is ControlOwner.HUMAN
         observed_owner_during_handover.append(session.owner)
+
+        # A fresh snapshot is what the operator's page should show now, not
+        # the pre-handoff frame from before they clicked anything -- that
+        # frame never changing again was the actual cause of "I click Take
+        # control and nothing visually happens."
+        assert request.screenshot != screenshot_before_control
+        assert Path(request.screenshot).exists()
+
+        # A second /take on the same request -- a double-click, or a browser
+        # resubmitting the POST on a reload -- must not crash. It used to:
+        # the control FSM only allows BLOCKED -> HUMAN once, so calling
+        # hand_to_human() again raised ControlViolation straight out to an
+        # unhandled 500 a real operator actually hit.
+        duplicate_take = await console.post(f"/take/{request.id}")
+        assert duplicate_take.status_code < 500
+        assert session.owner is ControlOwner.HUMAN
 
         # While the human holds it, automation is not allowed to act.
         with pytest.raises(Exception):

@@ -450,3 +450,300 @@ descriptors, which the ambiguity rule then catches rather than mis-resolving.
 **How it was found.** By rebuilding the target application's markup and watching
 which replays changed behaviour — not by reading the code. The same is true of
 most of D13 through D18.
+
+---
+
+## D22 — Intent text is parameterized the same way step actions are
+
+**Decision.** Before a step's `intent` is stored, any caller value it contains
+is replaced with `{{param.name}}`, the same substitution `_value_ref` already
+applies to actions.
+
+**Why.** Found running a genuine model against Groq's `openai/gpt-oss-120b`,
+not the scripted stand-in. Its stated reason for a step was "Click Search to
+retrieve member 10042's details" — it restated the literal member number,
+because that is what a model does when it explains its own reasoning in plain
+English. The scripted provider used everywhere else in this project's tests
+never does this: its canned explanations were written with no real value to
+restate, so this path was never exercised until a real model ran the loop.
+
+The recorder's final safety sweep did exactly what it is supposed to: it scans
+every recorded step for a literal caller value and refuses to emit the
+capability if one is found. It fired, correctly. What was missing was
+anything to save the run once it fired — the whole capability was discarded
+rather than the one string that tripped the guard being fixed. A new scrub
+step closes that (later generalized into `_scrub_text` — see D23): the same
+step now reads "Click Search to retrieve member
+`{{param.member_id}}`'s details", which says the same thing without the
+literal, and the run records cleanly.
+
+**Cost.** None found. The substitution is character-for-character the one
+already trusted for actions; applying it to one more field is not a new kind
+of risk.
+
+**How it was found.** By running a real, unscripted model against the target
+application and reading what it actually produced — the same way as D13
+through D18 and D21. The scripted provider's canned strings cannot produce
+this class of bug, because they were never written by anything that reasons
+in prose about the data it is handling.
+
+## D23 — Descriptor fallback text is parameterized too, not just intent
+
+**Decision.** `_scrub_intent` from D22 is generalized into `_scrub_text` and
+applied to two more places a caller value can leak into generated prose: an
+element descriptor's `row_text` fallback, and its `robustness_note`.
+
+**Why.** Found in a live human-attended run, driven through the operator
+console rather than by a model alone. Opening a sub-account, the model retried
+its `extract` call three times hunting for the reference number and, on one of
+those tries, targeted the "Initial Deposit" cell instead of the reference cell.
+The cell it settled on and recorded was labeled correctly — that part of
+`describe_element` was never wrong — but `describe_element` also folds the
+whole containing table row into a `FallbackHint` for resilience against layout
+drift, and a summary screen's row routinely holds more than the one field a
+step cares about. The mis-targeted attempt's row read "Initial Deposit $500",
+and `500` — the caller's `initial_deposit` value — rode along into the
+fallback text verbatim, well outside the one field the step was ever meant to
+touch. The recorder's safety sweep caught it and refused to emit the
+capability, same as D22.
+
+A deterministic run against the scripted provider was written to try to
+reproduce this offline first, to make sure the fix was aimed at the right
+place before touching it. It could not: the scripted provider always targets
+the correct cell on the first try, so it never produces the mis-targeted
+`extract` that creates the leaking row. That is not a gap in the scripted
+tests — it is the same gap D13 through D22 keep landing on. A canned script
+cannot misbehave the way a real model occasionally does, so bugs that only
+exist on the *path* to a correct answer, not in the answer itself, only surface
+by watching a real run.
+
+**Cost.** None found beyond D22's. Same substitution, two more call sites.
+
+**How it was found.** By a human operator actually driving the handoff console
+for a real, unscripted run — not by reading the code, and not by the scripted
+test suite, which cannot retry into the wrong cell in the first place.
+
+## D24 — Rate-limit retries give up loudly past a bounded silent wait
+
+**Decision.** `_retry_after_seconds` now parses hours/minutes/seconds out of a
+429's message, not just bare seconds, and the retry loop raises immediately
+rather than sleeping when the server's suggested cooldown exceeds
+`_MAX_SILENT_WAIT_SECONDS` (45s). Every retry also prints the wait and attempt
+number.
+
+**Why.** Found live: a day of testing against Groq's free tier exhausted its
+200,000-token *daily* budget (197,877 used, ~2,100 left, less than one more
+tool-calling request needs), which surfaces as a 429 with a message shaped
+like the per-minute limit this project had already built retry logic
+around — "Please try again in ..." — except naming the cooldown in minutes
+("3m14.832s") once it is long enough to need one. The regex only recognised
+bare seconds, so it silently missed the match and fell back to an 8-second
+default sized for the per-minute case, then retried straight back into the
+same wall, in total silence, for four attempts. In the operator console this
+was indistinguishable from a genuine hang — an open TCP connection sitting
+idle for minutes, no log output, no error — and cost real time diagnosing a
+network-level cause (IPv6 path MTU, a repeat of the earlier NVIDIA-endpoint
+saga) before the actual cause turned up in a direct reproduction.
+
+A daily quota does not clear itself in 45 seconds, so waiting it out silently
+was never going to be the right behaviour regardless of the regex fix. Once
+the cooldown is genuinely minutes long, the only honest thing to do is stop
+and say so — the operator can decide to wait, retry later, or switch
+providers, but they cannot decide anything while the console just looks
+frozen.
+
+**Cost.** A cooldown between 8 and 45 seconds is now still waited out
+silently except for one printed line per attempt; nothing about the
+per-minute case (the one this retry loop was originally built for) changed in
+practice.
+
+**How it was found.** By watching a real attended run go quiet for over ten
+minutes, ruling out the browser, the network route, and the process itself
+before reproducing the exact failure directly against the provider client —
+which took seconds once tried, versus the many minutes spent suspecting a
+hang. The scripted provider cannot produce a 429 at all, so this class of bug
+has no path to a test until a real quota is actually exhausted.
+
+## D25 — Take-control refreshes the console's screenshot
+
+**Decision.** `EscalationBroker.take_control()` takes a fresh screenshot the
+moment control actually transfers, and updates the request's `screenshot`
+and `url` fields with it, rather than leaving them at whatever was captured
+when the escalation was first raised.
+
+**Why.** Reported three times across three different attempted fixes this
+session — a direct-render vs. 303-redirect change to the POST handlers, then
+explicit `Cache-Control: no-store` headers — each aimed at "I click Take
+control and nothing visibly happens until I reload." None of them were wrong
+exactly, but none of them were the cause either: a background research pass
+tracing the click through `console.py`, `broker.py`, and `session/manager.py`
+end to end found that the button and status text were already re-rendering
+correctly on every load. What never changed was the screenshot embedded in
+the card — captured exactly once, in `raise_intervention`, and never
+refreshed by anything afterward, including take-control itself. The
+screenshot is the dominant visual element on the page; a human watching it
+stay frozen reasonably concludes the click did nothing, and a manual reload
+does not fix it either, since it is re-reading the same static file every
+time. Two rounds of fixing the page shell around a stale image were never
+going to resolve a complaint about the image.
+
+**Cost.** One extra screenshot per handoff -- a single Playwright call,
+already the same primitive `raise_intervention` uses for the first one.
+
+**How it was found.** Not by the researcher's own testing -- by chasing the
+same symptom the operator kept reporting after two prior "fixes," and, this
+time, tracing the actual request lifecycle end to end instead of pattern-
+matching to the last plausible cause (caching, redirects) that had already
+been tried and had not worked.
+
+## D26 — The caller-data sweep is scoped to string leaves, not raw JSON text
+
+**Decision.** `_assert_no_caller_data` now detects a leak the same way
+`_locate_leak` (D23's diagnostic helper) already located one: by walking a
+step's dumped structure and checking string leaves, not by substring-matching
+the caller's value against the step's raw serialized JSON text.
+
+**Why.** Found live, on a genuinely successful discovery run: the model
+signed in, filled the form, an operator handled the irreversible submit by
+hand, the reference number was extracted correctly (`discovery.succeeded`
+logged) — and then the run still ended in the same `RecorderError` as D23,
+naming `initial_deposit` again, in a step D23's own diagnostics said had no
+string field containing it. It didn't, because there wasn't one: an unrelated
+element's positional `FallbackHint` had `bbox.y = 500.0`, an entirely
+ordinary pixel coordinate, and `json.dumps` renders that float as the text
+`"500.0"` — which contains `"500"` as a substring for exactly the same reason
+a real leak would. The detection check and the diagnostic check were scoped
+differently (raw JSON text vs. string leaves only), so the diagnostic could
+correctly find nothing while the detector still fired.
+
+Every value that can actually reach a recorded step arrives as text —
+`_value_ref` and `_scrub_text` both only ever produce strings — so a bare
+JSON number is never how caller data enters a step, only ever how a
+coincidence does. A short numeric input (a dollar amount, an account number)
+colliding with *some* element's x/y/width/height somewhere in a multi-step
+capability is not a rare accident; on a real screen with real pixel
+coordinates it is close to certain over enough steps, which makes this guard
+essentially unusable for any capability whose inputs include short numbers —
+exactly the shape most banking inputs take.
+
+**Cost.** None found. Every real leak this project has hit (D22's intent
+text, D23's fallback row text and robustness note, the D13-shaped bare
+accessible name) is a string field; narrowing the sweep to strings loses no
+coverage this project has ever needed and has a test proving it still catches
+one.
+
+**How it was found.** By a live run that *succeeded* at every layer the
+system is actually supposed to test — the model, the escalation handoff, the
+extraction — and was still discarded at the very last step, which is what
+made this worth chasing rather than assuming the input was simply unlucky
+twice. D23's own diagnostic addition (reporting which field a leak was found
+in) is what made the mismatch visible instead of just a second unexplained
+refusal.
+
+## D27 — Time spent waiting on a human is excluded from the wall-clock budget
+
+**Decision.** `DiscoveryOrchestrator` tracks total time spent inside
+`_raise_intervention` (i.e. actually waiting on `on_intervention` to return)
+and adds it to the wall-clock deadline check, so a real operator's response
+time never counts against the automation-loop budget.
+
+**Why.** Found live: an attended run raised an irreversible-action
+escalation, a real operator took roughly ten minutes to get back to the
+console and resolve it correctly -- signed in, filled the form, approved the
+submit -- and the run failed immediately afterward with `exceeded the 300s
+wall clock`. Nothing went wrong; the operator did exactly what an attended
+run asks of them. The wall clock exists to catch automation that loops
+without making progress, which is a real failure mode this project has hit
+before (`max_steps`, `max_consecutive_noops` guard the same thing from other
+angles) -- it was never meant to bound how long a person takes to read a
+screen and click a button. The broker already has its own, much longer
+timeout for an *unanswered* escalation (`timeout_seconds=900.0` in
+`EscalationBroker`); the orchestrator's 300s budget was silently a second,
+much tighter deadline on the same wait, undocumented and almost certainly
+unintentional.
+
+**Cost.** None found. A run where automation is genuinely stuck in a loop
+still times out exactly as before -- only time spent inside an actual human
+wait is excluded, and that time is bounded on its own by the broker's
+900s timeout regardless.
+
+**How it was found.** By an operator (this project's own author) taking a
+normal, unhurried amount of time to respond to a live escalation while doing
+something else -- not a stress test, just an ordinary attended run running
+long enough for real human latency to matter. The scripted provider's tests
+never wait on anything, so this had no path to a test until a slow human
+actually did.
+
+## D28 — Taking control twice is a no-op, not a crash
+
+**Decision.** `EscalationBroker.take_control()` checks the session's actual
+control-FSM owner before calling `hand_to_human()`; if control has already
+moved off `BLOCKED` (i.e. a human already has it), it returns the request
+unchanged instead of transitioning again.
+
+**Why.** Found live: an operator's browser sent `POST /take/{id}` twice for
+the same escalation -- a double-click, or a reflexive reload right after
+clicking, are both completely ordinary things a real person does. The
+control FSM (`cua/session/control.py`) only allows `BLOCKED -> HUMAN` once;
+the second call reached `grant_to_human()` with the owner already `HUMAN`,
+which correctly raised `ControlViolation` by the FSM's own contract -- and
+that exception then propagated straight out of the FastAPI handler,
+uncaught, as an unhandled 500 the operator saw as a bare "server error" with
+no way to recover except restarting the run. The FSM raising loudly on an
+invalid transition is correct and stays that way; what was missing was
+anything upstream making the transition attempt conditional on it actually
+being needed.
+
+This is race-safe without a lock: `grant_to_human()`'s mutation
+(`control.grant_to_human()`) runs synchronously, before `hand_to_human()`'s
+first `await`. In asyncio's cooperative model that means whichever request
+reaches `take_control()` first has already flipped the owner by the time a
+second, concurrently-arriving request reaches the check -- there is no
+window where both requests can observe `BLOCKED`.
+
+**Cost.** None found. A genuinely new escalation still transitions exactly
+as before; only a request that already succeeded is now idempotent against
+being repeated.
+
+**How it was found.** By a real operator's browser, not by reasoning about
+the FSM in the abstract -- double-clicks and reload reflexes are the kind of
+input a live person produces and a scripted test never does.
+
+## D29 — take_control() flips status before it refreshes the screenshot
+
+**Decision.** Inside `EscalationBroker.take_control()`, `request.status =
+IN_CONTROL` is set immediately after `session.hand_to_human()` returns, not
+after the screenshot refresh (D25) that follows it.
+
+**Why.** Found live, the fourth distinct bug from the same reported symptom
+this session: an operator clicked "Take control", the response took a
+moment -- `hand_to_human()` installs a human-action watcher over CDP and
+`take_control()` then refreshes the escalation's screenshot, both real round
+trips D25 added deliberately, neither free -- and they reloaded out of
+impatience before the response arrived. Until this fix, `request.status` was
+only set to `IN_CONTROL` *after* that screenshot capture finished, so a
+reload landed mid-request saw the console still reporting `OPEN` and
+re-rendered the "Take control" button, even though `session.owner` was
+already genuinely `HUMAN`. The render was internally consistent with what
+the server knew at that exact instant; it was also indistinguishable from
+the click having failed, which is exactly what kept getting reported as
+"I had to reload."
+
+Status and screenshot answer different questions -- "who has control"
+(cheap, decided the moment `hand_to_human()` returns) and "what does the
+session look like right now" (a real CDP round trip, worth doing but not
+gating). Ordering the fast, decisive fact first means a request that arrives
+mid-refresh -- a reload, a poll -- sees the correct state even if the picture
+in it is a beat stale, rather than a wrong state because the picture was not
+ready yet.
+
+**Cost.** None found. The screenshot still gets refreshed exactly as before;
+only the order changed.
+
+**How it was found.** By an operator reloading mid-request during a live
+attended run, then confirming precisely what they meant by "reload" through
+a direct question rather than assuming -- the answer ("I pressed reload
+myself," not an auto-refresh) is what pointed at a real request-timing race
+instead of a rendering or caching issue, which the previous three attempts
+(D25's stale screenshot, D28's crash, and the caching/redirect work before
+that) had already ruled out one at a time.

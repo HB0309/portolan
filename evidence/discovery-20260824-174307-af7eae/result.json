@@ -1,0 +1,53 @@
+{
+  "succeeded": false,
+  "run_id": "discovery-[REDACTED]-af7eae",
+  "goal": "look up member [REDACTED] and read their current savings balance",
+  "provider": "openai",
+  "model": "openai/gpt-oss-120b",
+  "steps_taken": 4,
+  "provider_calls": 4,
+  "input_tokens": 8805,
+  "output_tokens": 627,
+  "capability_path": null,
+  "capability_id": null,
+  "failure": {
+    "category": "surface_error",
+    "step_id": null,
+    "step_intent": null,
+    "expected": "",
+    "observed": "",
+    "message": "openai call failed: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01krg2q449fgdv2s57g2p0k5sm` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 5607, Requested 3083. Please try again in 5.175s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+    "evidence": [],
+    "escalated": false
+  },
+  "escalations": [],
+  "evidence": [
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-af7eae\\steps\\01-before.png",
+      "note": "01-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-af7eae\\steps\\02-before.png",
+      "note": "02-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-af7eae\\steps\\03-before.png",
+      "note": "03-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-af7eae\\steps\\04-before.png",
+      "note": "04-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-af7eae\\steps\\05-before.png",
+      "note": "05-before"
+    }
+  ],
+  "started_at": "2026-08-24T17:43:38.468259Z",
+  "duration_ms": 30125
+}

@@ -86,7 +86,9 @@ class CapabilityRecorder:
 
     # -- descriptors -----------------------------------------------------
 
-    def describe_element(self, element: Element) -> ElementDescriptor:
+    def describe_element(
+        self, element: Element, inputs: dict[str, str] | None = None
+    ) -> ElementDescriptor:
         """Build the durable identity of a control from one sighting of it.
 
         The subtle case is a data cell. Its accessible name is its own text --
@@ -97,6 +99,17 @@ class CapabilityRecorder:
 
         So for cells the neighbouring label is the identity, and the value is
         deliberately not recorded at all.
+
+        Found live, against a real model rather than the scripted stand-in:
+        even when the *targeted* cell is identified correctly, the ``row_text``
+        fallback below captures the whole containing table row -- and a table
+        row on a summary screen routinely holds more than one field. A model
+        that mis-targets one cell while hunting for another (it happened here
+        hunting for a reference number and landing briefly on the deposit
+        amount instead) still produces a descriptor whose fallback text
+        includes that neighbour's value verbatim. ``inputs`` lets that text be
+        parameterised the same way ``intent`` already is, rather than only
+        protecting the field that was deliberately read.
         """
         is_cell = element.role in {"cell", "columnheader"}
         if is_cell and element.label_hint:
@@ -116,9 +129,8 @@ class CapabilityRecorder:
 
         fallbacks: list[FallbackHint] = []
         if element.row_text:
-            fallbacks.append(
-                FallbackHint(kind=FallbackKind.TEXT, value=element.row_text[:120])
-            )
+            row_text = self._scrub_text(element.row_text[:120], inputs or {})
+            fallbacks.append(FallbackHint(kind=FallbackKind.TEXT, value=row_text))
         if element.rect is not None:
             fallbacks.append(
                 FallbackHint(
@@ -139,7 +151,9 @@ class CapabilityRecorder:
             name_source="adjacent_label" if by_label else "accessible_name",
             anchors=anchors,
             fallbacks=fallbacks,
-            robustness_note=self._robustness_note(element, by_label, anchors),
+            robustness_note=self._scrub_text(
+                self._robustness_note(element, by_label, anchors), inputs or {}
+            ),
             recorded_confidence=0.8 if by_label else 1.0,
         )
 
@@ -199,6 +213,33 @@ class CapabilityRecorder:
             return ValueRef.of_template(template)
 
         return ValueRef.of_literal(raw)
+
+    def _scrub_text(self, text: str, inputs: dict[str, str]) -> str:
+        """Parameterize a caller value wherever it shows up in generated prose.
+
+        Two ways this text gets written turned out to both need it, found in
+        two separate live runs. A model's stated reason for a step naturally
+        restates the value it is working with -- "Click Search to retrieve
+        member 10042's details" -- which the scripted stand-in used elsewhere
+        in this project's tests never does, since its canned explanations were
+        written with no real value to restate. And a descriptor's ``row_text``
+        fallback captures a whole table row, which routinely holds more than
+        the one field being targeted -- a model that mis-targets a neighbouring
+        cell while hunting for the right one still produces a fallback whose
+        text includes that neighbour's value verbatim.
+
+        Actions already go through this same substitution in ``_value_ref``.
+        Free text needs it too: the recorder's final sweep scans every recorded
+        step in full, and would otherwise refuse to emit an artifact whose only
+        fault is that its generated text was honest about what it saw.
+        Parameterizing here is what turns that from a lost run into a readable
+        capability -- "Click Search to retrieve member {{param.member_id}}'s
+        details" says the same thing without the literal.
+        """
+        for name, value in inputs.items():
+            if value and len(str(value)) >= 2 and str(value) in text:
+                text = text.replace(str(value), f"{{{{param.{name}}}}}")
+        return text
 
     # -- checkpoints -----------------------------------------------------
 
@@ -287,7 +328,9 @@ class CapabilityRecorder:
         for index, raw_step in enumerate(trace.steps, start=1):
             step_id = f"s{index}"
             descriptor = (
-                self.describe_element(raw_step.element) if raw_step.element else None
+                self.describe_element(raw_step.element, trace.inputs)
+                if raw_step.element
+                else None
             )
             action = self._action_for(raw_step, trace.inputs)
 
@@ -305,7 +348,9 @@ class CapabilityRecorder:
             steps.append(
                 Step(
                     id=step_id,
-                    intent=raw_step.intent or f"{raw_step.tool} step {index}",
+                    intent=self._scrub_text(
+                        raw_step.intent or f"{raw_step.tool} step {index}", trace.inputs
+                    ),
                     action=action,
                     target=descriptor,
                     wait=WaitSpec(
@@ -393,22 +438,38 @@ class CapabilityRecorder:
         This checks rather than trusts, because the failure mode is regulated
         data committed to a public repository, and that is not something to
         discover later.
+
+        Scoped to string leaves, not the raw serialized JSON. Found live: a
+        capability was refused over ``initial_deposit`` = "500" that turned
+        out not to be a leak at all -- an unrelated field's ``FallbackHint``
+        bounding box had ``y: 500.0``, and ``"500" in step.model_dump_json()``
+        is true for that for the same reason it is true for a real leak, since
+        JSON has no way to tell a coincidental float from a string that means
+        it. Caller data can only ever reach a step as text -- every value that
+        flows through ``_value_ref`` or ``_scrub_text`` ends up as a string,
+        never a bare number -- so a short numeric input (a deposit amount, an
+        account number) colliding with some element's pixel coordinates
+        somewhere on the page is not a rare accident, it is close to certain
+        over enough steps. Restricting the sweep to string leaves removes that
+        whole false-positive class without losing any real coverage.
         """
         # Scoped to the steps, which is what actually gets executed and where a
         # literal would do harm. `inputs` legitimately carries a non-sensitive
         # example, and `provenance` holds identifiers we chose ourselves --
         # sweeping those in produces false positives that train people to
         # ignore this check, which is worse than not having it.
-        serialized = json.dumps(
-            [json.loads(step.model_dump_json()) for step in capability.steps]
-        )
         for name, value in inputs.items():
             text = str(value)
-            if len(text) >= 3 and text in serialized:
+            if len(text) < 3:
+                continue
+            for step in capability.steps:
+                field = _locate_leak(step, text)
+                if not field:
+                    continue
                 raise RecorderError(
                     f"refusing to emit the capability: the value of input {name!r} "
-                    f"appears literally in a recorded step. It must be recorded as a "
-                    f"parameter reference."
+                    f"appears literally in step {step.id!r} (field: {field})"
+                    ". It must be recorded as a parameter reference."
                 )
 
 
@@ -426,6 +487,33 @@ def _looks_like_data(text: str) -> bool:
         return True
     digits = sum(character.isdigit() for character in stripped)
     return digits / len(stripped) > 0.4
+
+
+def _locate_leak(step: Any, text: str) -> str:
+    """Name the field a leaked value was found in, for a debuggable error.
+
+    Best-effort dotted-path search over the step's own serialized form. Not
+    exhaustive by design -- it exists to save a diagnosis session, not to be
+    load-bearing itself; the guard above already raises regardless of whether
+    this finds a readable path.
+    """
+
+    def walk(node: Any, path: str) -> str | None:
+        if isinstance(node, str):
+            return path if text in node else None
+        if isinstance(node, dict):
+            for key, value in node.items():
+                found = walk(value, f"{path}.{key}" if path else key)
+                if found:
+                    return found
+        elif isinstance(node, list):
+            for index, value in enumerate(node):
+                found = walk(value, f"{path}[{index}]")
+                if found:
+                    return found
+        return None
+
+    return walk(json.loads(step.model_dump_json()), "") or ""
 
 
 def _distinguishing_text(
