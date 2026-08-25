@@ -69,6 +69,13 @@ class Element:
     section: str = ""
     #: For table cells: the text of the row they sit in.
     row_text: str = ""
+    #: For a genuine multi-column data-grid cell: the text of every *other*
+    #: cell in the same row -- what tells "the Checking row's Balance" apart
+    #: from "the Savings row's Balance" when a descriptor needs to say which
+    #: row it means, not just which column. Empty for label/value form cells,
+    #: where the row itself is the field and has no peers to distinguish it
+    #: from.
+    row_peers: tuple[str, ...] = ()
     rect: Rect | None = None
     attributes: dict[str, str] = field(default_factory=dict)
     handle: Any = None

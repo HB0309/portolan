@@ -102,29 +102,92 @@
   };
 
   /* The legacy affordance: what is this control called, according to where it
-   * sits, when the markup does not say. */
+   * sits, when the markup does not say.
+   *
+   * Two table shapes need two different answers, and neither this app nor
+   * legacy markup in general marks the difference with a class name or a
+   * semantic <th> -- both a label/value form row and a data-grid header row
+   * are plain <td>s here. The shapes have to be told apart structurally:
+   *
+   *   - A label/value pair: exactly two cells per row (caption, value),
+   *     repeated down the form. The cell to the left IS the label.
+   *   - A data grid: more than two cells per row (a real column set --
+   *     Type, Account No., Balance, Opened...). The cell to the left is
+   *     another data value, never a caption; the label is the header cell
+   *     directly above, at the same column position.
+   *
+   * Found live: a capability that read an account's balance from a data
+   * grid recorded the *account number in the next cell over* as the
+   * balance's identity, because the left-neighbour walk below ran
+   * unconditionally and "succeeded" on the wrong neighbour before anything
+   * got a chance to notice the row had four columns, not two. It replayed
+   * fine for the member it was recorded against and failed outright for
+   * every other member, since account numbers are unique per record.
+   *
+   * The >2-cells rule is a heuristic, not a proof -- a genuine two-column
+   * grid (just "Name | Balance", nothing else) would still be misread as a
+   * label/value pair, the same class of edge case the irreversible-action
+   * name matcher already accepts elsewhere in this project. It is right for
+   * the common legacy shapes (paired-row forms, header-plus-columns grids),
+   * which is what matters here, not universal correctness on every table
+   * shape anyone could author.
+   *
+   * One correction found immediately by actually running it: cell *count*
+   * alone over-counts a row that carries a rowspan cell for something else
+   * entirely -- this app's search form is a two-cell label/value row plus a
+   * submit button that spans three rows down the side, which is three
+   * children, not two, and was misread as a data grid. A rowspan cell is
+   * never a repeating column; only cells that start fresh on this row (no
+   * rowspan, or rowspan of 1) count toward "how wide is this row" here.
+   */
+  const rowWidth = (row) =>
+    Array.prototype.filter.call(row.children, (c) => (c.rowSpan || 1) <= 1).length;
+
   const labelHint = (el) => {
     const cell = el.tagName.toLowerCase() === "td" ? el : el.closest("td");
     if (!cell) return "";
-    let prev = cell.previousElementSibling;
-    while (prev) {
-      const t = text(prev);
-      if (t && t.length <= 60) return t.replace(/[:*]\s*$/, "");
-      prev = prev.previousElementSibling;
-    }
-    /* Some forms put the label in the row above rather than the cell to the
-     * left, so a grid header can name the control beneath it. This only applies
-     * to controls: for a plain data cell in a label/value table, the row above
-     * is the *previous field*, not this one's label, and using it would attach
-     * confidently wrong identifiers to half the page. */
-    if (el.tagName.toLowerCase() === "td" || el.tagName.toLowerCase() === "th") return "";
     const row = cell.closest("tr");
-    const previousRow = row ? row.previousElementSibling : null;
-    if (previousRow && previousRow.children.length === row.children.length) {
-      const index = Array.prototype.indexOf.call(row.children, cell);
-      const header = previousRow.children[index];
-      const t = text(header);
-      if (t && t.length <= 60) return t.replace(/[:*]\s*$/, "");
+    const isDataGrid = row && rowWidth(row) > 2;
+
+    if (!isDataGrid) {
+      let prev = cell.previousElementSibling;
+      while (prev) {
+        const t = text(prev);
+        if (t && t.length <= 60) return t.replace(/[:*]\s*$/, "");
+        prev = prev.previousElementSibling;
+      }
+    }
+
+    /* A data-grid cell's label is the header, at the same column position --
+     * but "the row above" is only the header for the first data row. Found
+     * live, immediately: for the second account in a two-account list, the
+     * row above is the *first account's* row, not the header, and it has
+     * the same width, so the previous version of this happily read that
+     * row's Balance cell instead. The header is only ever the table's own
+     * first row, however many data rows deep the current one is -- walking
+     * up one sibling at a time was the bug, not a detail to preserve. */
+    if (isDataGrid) {
+      const table = row.closest("table");
+      const header = table && table.rows.length ? table.rows[0] : null;
+      if (header && header !== row && header.children.length === row.children.length) {
+        const index = Array.prototype.indexOf.call(row.children, cell);
+        const t = text(header.children[index]);
+        if (t && t.length <= 60) return t.replace(/[:*]\s*$/, "");
+      }
+    }
+
+    /* A control embedded in a themed grid cell whose own row had no usable
+     * left-neighbour caption: the label is directly above it, one row up.
+     * Unlike the data-grid case this is a single header-plus-controls row,
+     * not repeating data, so "the row above" is exactly right here. */
+    if (!(el.tagName.toLowerCase() === "td" || el.tagName.toLowerCase() === "th")) {
+      const previousRow = row ? row.previousElementSibling : null;
+      if (previousRow && previousRow.children.length === row.children.length) {
+        const index = Array.prototype.indexOf.call(row.children, cell);
+        const header = previousRow.children[index];
+        const t = text(header);
+        if (t && t.length <= 60) return t.replace(/[:*]\s*$/, "");
+      }
     }
     return "";
   };
@@ -170,6 +233,29 @@
   const rowTextOf = (el) => {
     const row = el.closest ? el.closest("tr") : null;
     return row ? text(row).slice(0, 160) : "";
+  };
+
+  /* The other cells in this data-grid row, for telling one row apart from
+   * another when a table has more than one -- e.g. a member with both a
+   * Savings and a Checking account, where the Balance column alone reads
+   * identically in both rows and a recorded capability that only knows
+   * "the Balance cell" cannot say which one it meant.
+   *
+   * Not every cell qualifies: only genuine multi-column data-grid rows have
+   * peers worth naming (a label/value form's "cell to the left" is already
+   * the label itself, handled by labelHint above). Column *order* varies by
+   * tenant (a reversed-columns variant puts Balance first instead of
+   * third), so this returns every peer's text rather than assuming which
+   * position holds the identifying one -- the recorder picks the one that
+   * looks like a category, not a value, from whichever position it's in. */
+  const rowPeersOf = (el) => {
+    const cell = el.tagName && el.tagName.toLowerCase() === "td" ? el : (el.closest ? el.closest("td") : null);
+    if (!cell) return [];
+    const row = cell.closest("tr");
+    if (!row || rowWidth(row) <= 2) return [];
+    return Array.prototype.map
+      .call(row.children, (c) => (c === cell ? null : text(c)))
+      .filter((t) => t);
   };
 
   const SELECTOR = [
@@ -238,6 +324,7 @@
       focused: document.activeElement === el,
       section: sectionOf(el),
       row_text: role === "cell" || role === "columnheader" ? rowTextOf(el) : "",
+      row_peers: role === "cell" || role === "columnheader" ? rowPeersOf(el) : [],
       rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
       attributes: {
         tag: el.tagName.toLowerCase(),

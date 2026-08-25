@@ -5,8 +5,9 @@ is tested against the real pieces: a real browser session, the real policy gate
 stopping a real irreversible action, the real console rendering the intervention,
 and a real HTTP round trip taking control and resuming.
 
-Requires the mock app on :8080 and a capability recorded from it; both are set up
-by the fixtures. Marked ``integration`` so the fast unit suite stays fast.
+Requires the mock app (on MOCKAPP_PORT, default :8080) and a capability recorded
+from it; both are set up by the fixtures. Marked ``integration`` so the fast
+unit suite stays fast.
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from pathlib import Path
 import httpx
 import pytest
 
+from cua.config import MOCKAPP_HOST as _MOCKAPP_HOST, MOCKAPP_PORT as _MOCKAPP_PORT
 from cua.escalation.broker import EscalationBroker
 from cua.escalation.console import build_console
 from cua.escalation.models import InterventionStatus, ResumeMode
@@ -32,18 +34,23 @@ from cua.surfaces.web import WebSurface
 
 pytestmark = pytest.mark.integration
 
-MOCKAPP = "http://127.0.0.1:8080"
+# cua.config is the single source of truth for where the mock app is (see its
+# own docstring for why mockapp/app.py deliberately keeps an independent copy
+# of this instead of importing it) -- socket.connect_ex needs the port as an
+# int, which is the one adaptation needed here.
+_MOCKAPP_PORT_INT = int(_MOCKAPP_PORT)
+MOCKAPP = f"http://{_MOCKAPP_HOST}:{_MOCKAPP_PORT}"
 CAPABILITY = Path("capabilities/cu.member.open_subaccount.json")
 
 
 def _mockapp_running() -> bool:
     with contextlib.closing(socket.socket()) as sock:
         sock.settimeout(0.5)
-        return sock.connect_ex(("127.0.0.1", 8080)) == 0
+        return sock.connect_ex((_MOCKAPP_HOST, _MOCKAPP_PORT_INT)) == 0
 
 
 needs_app = pytest.mark.skipif(
-    not _mockapp_running(), reason="the mock app is not running on :8080"
+    not _mockapp_running(), reason=f"the mock app is not running on :{_MOCKAPP_PORT}"
 )
 needs_capability = pytest.mark.skipif(
     not CAPABILITY.exists(), reason="record cu.member.open_subaccount first"
@@ -63,6 +70,13 @@ async def test_operator_takes_the_live_session_and_hands_it_back(tmp_path):
     capability = Capability.model_validate_json(CAPABILITY.read_text(encoding="utf-8"))
     assert capability.approval == "draft"
     assert capability.risk.contains_irreversible, "this test needs a risky step to stop on"
+    # The committed fixture's entry_point is baked in from whatever port it was
+    # recorded against. Overriding it here, the same way cli.py's --entry does,
+    # means this test targets wherever mockapp is actually running right now
+    # rather than requiring every capability be re-recorded after a port change.
+    capability = capability.model_copy(
+        update={"surface": capability.surface.model_copy(update={"entry_point": MOCKAPP + "/"})}
+    )
 
     policy = PolicyEngine.load()
     evidence = EvidenceRecorder("test-escalation", root=tmp_path, redactor=policy.redactor)
@@ -106,6 +120,11 @@ async def test_operator_takes_the_live_session_and_hands_it_back(tmp_path):
         page = (await console.get("/")).text
         assert request.reason in page
         assert "Take control of the live session" in page
+
+        # No auto-refresh while a card is showing -- a scheduled reload
+        # racing the operator's own click on "Take control" is what silently
+        # dropped the request client-side before it ever reached the server.
+        assert "http-equiv=\"refresh\"" not in page
 
         # The screenshot on the request right now is the one taken when the
         # escalation was raised -- before the operator has done anything.
@@ -203,12 +222,24 @@ async def test_operator_takes_the_live_session_and_hands_it_back(tmp_path):
     assert result.status.value in {"success", "failure"}
     assert result.provider_calls == 0, "replay must never consult a model"
 
+    # _escalations used to be declared and read but never appended to --
+    # result.escalations was silently always empty regardless of how many
+    # escalations a run actually raised.
+    assert len(result.escalations) == 1
+    escalation = result.escalations[0]
+    assert escalation.reason == "irreversible_action"
+    assert escalation.resume_mode == "continue"
+    assert escalation.resolved_at is not None
+
 
 @needs_app
 @needs_capability
 async def test_unattended_run_records_the_intervention_and_refuses(tmp_path):
     """With nobody watching, the run does not commit and does not hang."""
     capability = Capability.model_validate_json(CAPABILITY.read_text(encoding="utf-8"))
+    capability = capability.model_copy(
+        update={"surface": capability.surface.model_copy(update={"entry_point": MOCKAPP + "/"})}
+    )
     policy = PolicyEngine.load()
     evidence = EvidenceRecorder("test-unattended", root=tmp_path, redactor=policy.redactor)
     surface = await WebSurface.launch(headless=True)

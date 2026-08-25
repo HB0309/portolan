@@ -26,6 +26,7 @@ from __future__ import annotations
 import asyncio
 import time
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Any, Awaitable, Callable
 
 from cua.evidence.recorder import EvidenceRecorder
@@ -46,6 +47,7 @@ from cua.schema.capability import (
     TypeTextAction,
 )
 from cua.schema.results import (
+    EscalationTrace,
     FailureCategory,
     FailureReport,
     OutcomeReport,
@@ -201,8 +203,12 @@ class ReplayEngine:
             if outcome_report is not None:
                 return finish(ReplayStatus.BUSINESS_OUTCOME, outcome=outcome_report)
             if failure is not None:
-                await self.evidence.snapshot(self.surface, f"{step.id}-failure")
-                await self.evidence.screenshot(self.surface, f"{step.id}-failure")
+                # Independent reads of the same current page state -- a DOM
+                # dump and a screenshot -- with no dependency on each other.
+                await asyncio.gather(
+                    self.evidence.snapshot(self.surface, f"{step.id}-failure"),
+                    self.evidence.screenshot(self.surface, f"{step.id}-failure"),
+                )
                 failure.evidence = list(self.evidence.refs)
                 return finish(ReplayStatus.FAILURE, failure=failure)
 
@@ -602,11 +608,30 @@ class ReplayEngine:
         return True, ""
 
     async def _escalate(self, reason: str, context: dict[str, Any]) -> ResumeDecision:
+        # This is the only place an escalation is ever raised in replay, so
+        # it is also the one place responsible for recording it -- found live
+        # by review, not by a failing test: _escalations was declared and read
+        # in three places (the result's escalation list, FailureReport.escalated,
+        # this method's own screenshot numbering) but nothing ever appended to
+        # it. FailureReport.escalated was silently always False, and every
+        # escalation in one run overwrote the same "escalation-1" screenshot.
+        trace = EscalationTrace(
+            intervention_id=f"esc-{len(self._escalations) + 1}",
+            step_id=context.get("step"),
+            reason=reason,
+            raised_at=datetime.now(timezone.utc),
+        )
+        self._escalations.append(trace)
         self.evidence.log("escalation.raised", reason=reason, context=context)
-        await self.evidence.screenshot(self.surface, f"escalation-{len(self._escalations) + 1}")
+        await self.evidence.screenshot(self.surface, f"escalation-{len(self._escalations)}")
         if self.on_escalation is None:
+            trace.resolved_at = datetime.now(timezone.utc)
+            trace.resume_mode = "abort"
             return ResumeDecision(mode="abort", note="no operator channel configured")
         decision = await self.on_escalation(reason, context)
+        trace.resolved_at = datetime.now(timezone.utc)
+        trace.resume_mode = decision.mode
+        trace.human_actions_recorded = decision.human_actions
         self.evidence.log("escalation.resolved", reason=reason, mode=decision.mode,
                           note=decision.note, human_actions=decision.human_actions)
 

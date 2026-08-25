@@ -11,11 +11,10 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
 import re
 from typing import Any
 
-from cua.llm.base import LLMError, LLMResponse, Message, ToolCall
+from cua.llm.base import LLMError, LLMResponse, Message, ToolCall, resolve_setting
 
 DEFAULT_MODEL = "gpt-4o"
 
@@ -47,13 +46,13 @@ class OpenAIProvider:
         except ImportError as exc:  # pragma: no cover
             raise LLMError("the openai package is not installed") from exc
 
-        key = api_key or os.environ.get("OPENAI_API_KEY")
+        key = resolve_setting(api_key, "OPENAI_API_KEY")
         if not key:
             raise LLMError(
                 "OPENAI_API_KEY is not set. Put it in .env, or run with "
                 "--provider scripted to exercise the loop without a model."
             )
-        self.model = model or os.environ.get("OPENAI_MODEL") or DEFAULT_MODEL
+        self.model = resolve_setting(model, "OPENAI_MODEL", DEFAULT_MODEL)
 
         # Several providers -- Google's Gemini, Groq, OpenRouter, a local
         # Ollama -- expose an OpenAI-compatible chat-completions endpoint with
@@ -61,7 +60,7 @@ class OpenAIProvider:
         # makes a free tier usable for a smoke test without a fourth adapter to
         # maintain. Tool-call fidelity varies between them, so a run that works
         # here is evidence the loop is sound, not that any model is.
-        base_url = base_url or os.environ.get("OPENAI_BASE_URL")
+        base_url = resolve_setting(base_url, "OPENAI_BASE_URL")
         # Some OpenAI-compatible endpoints (reproduced against NVIDIA's NIM
         # catalog while building this) accept a tool-calling request and then
         # go silent -- no response, no error, no stream event -- rather than

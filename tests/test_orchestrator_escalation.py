@@ -179,7 +179,7 @@ class TestHumanWaitTimeIsExcludedFromTheWallClock:
 
         async def slow_operator(reason, context):
             # Longer than the tiny wall-clock budget below, on purpose.
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(0.3)
             return InterventionOutcome(approved=True, performed_by_human=False)
 
         policy = PolicyEngine.load()
@@ -210,4 +210,8 @@ class TestHumanWaitTimeIsExcludedFromTheWallClock:
         )
 
         assert result.succeeded, result.failure
-        assert orchestrator._human_wait_seconds >= 0.2
+        # asyncio.sleep can return a hair early depending on timer
+        # resolution, so this is deliberately looser than the 0.3s slept
+        # above -- the property under test is "meaningfully excluded", not a
+        # precise measurement of sleep().
+        assert orchestrator._human_wait_seconds >= 0.25

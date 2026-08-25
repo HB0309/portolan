@@ -15,10 +15,9 @@ handles, not prose for someone to parse.
 
 from __future__ import annotations
 
-import os
 from typing import Any
 
-from cua.llm.base import LLMError, LLMResponse, Message, ToolCall
+from cua.llm.base import LLMError, LLMResponse, Message, ToolCall, resolve_setting
 
 DEFAULT_MODEL = "claude-opus-5"
 
@@ -32,13 +31,13 @@ class AnthropicProvider:
         except ImportError as exc:  # pragma: no cover
             raise LLMError("the anthropic package is not installed") from exc
 
-        key = api_key or os.environ.get("ANTHROPIC_API_KEY")
+        key = resolve_setting(api_key, "ANTHROPIC_API_KEY")
         if not key:
             raise LLMError(
                 "ANTHROPIC_API_KEY is not set. Put it in .env, or run with "
                 "--provider scripted to exercise the loop without a model."
             )
-        self.model = model or os.environ.get("ANTHROPIC_MODEL") or DEFAULT_MODEL
+        self.model = resolve_setting(model, "ANTHROPIC_MODEL", DEFAULT_MODEL)
         self._client = AsyncAnthropic(api_key=key)
 
     async def decide(

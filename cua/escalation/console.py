@@ -38,7 +38,7 @@ _PAGE = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<meta http-equiv="refresh" content="{refresh}">
+{refresh_tag}
 <style>
   :root {{ color-scheme: dark; }}
   body {{ font-family: system-ui, sans-serif; margin: 0; background: #11151a; color: #e6edf3; }}
@@ -79,7 +79,24 @@ def build_console(broker: EscalationBroker) -> FastAPI:
 
     def render() -> str:
         open_requests = broker.open_requests
-        refresh = 3 if open_requests else 5
+        # Auto-refresh only while idle, waiting for the *next* escalation to
+        # appear -- there is nothing else to wait for passively there, so
+        # nothing a reload can interrupt. The instant a card is showing, this
+        # is switched off entirely.
+        #
+        # Found live: with a card showing, on a short refresh, the operator's
+        # own click raced the timer -- a human's realistic time to read the
+        # card and click "Take control" is a couple of seconds, squarely
+        # inside what a 3s refresh needs to fire again, and a browser can only
+        # run one navigation at a time. When both land close together the
+        # scheduled reload wins and the click's own POST is abandoned before
+        # it reaches the server -- nothing logged, nothing broken, the button
+        # simply never fired. That is not a rare coincidence at a 3s period;
+        # ordinary human reaction time sits right in the collision zone. Once
+        # a card is up, refreshing serves no purpose anyway -- nothing on it
+        # changes until the operator acts through one of its own buttons,
+        # which itself is a fresh page load.
+        refresh_tag = "" if open_requests else '<meta http-equiv="refresh" content="5">'
 
         if not open_requests:
             body = (
@@ -87,7 +104,7 @@ def build_console(broker: EscalationBroker) -> FastAPI:
                 "The automation is running unattended.</div></div>"
             )
             return _PAGE.format(
-                refresh=refresh,
+                refresh_tag=refresh_tag,
                 run_id=broker.run_id,
                 owner=broker.session.owner.value,
                 body=body,
@@ -150,7 +167,7 @@ def build_console(broker: EscalationBroker) -> FastAPI:
             )
 
         return _PAGE.format(
-            refresh=refresh,
+            refresh_tag=refresh_tag,
             run_id=broker.run_id,
             owner=broker.session.owner.value,
             body="".join(chunks),

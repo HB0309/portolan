@@ -126,6 +126,27 @@ class CapabilityRecorder:
             )
         if element.section:
             anchors.append(Anchor(kind=AnchorKind.HEADING, value=element.section))
+        # A data-grid cell's column tells the resolver *what* it means
+        # ("Balance") but not *which row* -- two accounts both have a
+        # Balance cell. Found live: a member with a Savings and a Checking
+        # account made "the Balance cell" ambiguous, and the run correctly
+        # refused to guess rather than silently reading the wrong one. The
+        # row's other cells are what actually distinguish it from its
+        # neighbours; picking the one that reads as a category rather than a
+        # value (reusing the same test a generated checkpoint marker already
+        # uses to avoid pinning itself to one record) anchors on "this row
+        # says Checking" without caring which column position that landed in
+        # -- unlike the extracted value itself, an account's type is fixed
+        # by the task, not supplied by the caller, so it is safe to record
+        # as a literal.
+        row_key = next((p for p in element.row_peers if not _looks_like_data(p)), None)
+        if row_key:
+            anchors.append(
+                Anchor(
+                    kind=AnchorKind.CONTAINER_TEXT,
+                    value=self._scrub_text(row_key[:60], inputs or {}),
+                )
+            )
 
         fallbacks: list[FallbackHint] = []
         if element.row_text:
@@ -563,7 +584,3 @@ def _load_knowledge(product: str) -> dict[str, Any]:
     outcomes = [BusinessOutcome.model_validate(item) for item in raw.get("outcomes", [])]
     recovery = [RecoveryPolicy.model_validate(item) for item in raw.get("recovery", [])]
     return {"outcomes": outcomes, "recovery": recovery}
-
-
-def slugify(text: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "_", text.strip().lower()).strip("_")

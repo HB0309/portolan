@@ -143,13 +143,26 @@ class WebSurface(Surface):
         url = self._page.url
         title = ""
 
-        for frame_index, (path, frame) in enumerate(self._frames()):
+        # Each frame's extraction is an independent CDP round trip with no
+        # dependency on any other frame's result. observe() is called at
+        # least twice per replay step and once per discovery step, so on a
+        # frameset app this was N sequential round trips every single step of
+        # the hot loop; gathering them gets it down to the slowest one. Frame
+        # order (not completion order) still decides ref numbering below --
+        # asyncio.gather preserves the input list's order in its results.
+        frames = self._frames()
+
+        async def extract(frame: Frame) -> Any:
             try:
-                payload = await frame.evaluate(_EXTRACT_JS)
+                return await frame.evaluate(_EXTRACT_JS)
             except PlaywrightError:
-                # A frame can detach between enumeration and evaluation during a
-                # navigation. That is normal, not a failure of perception.
-                continue
+                # A frame can detach between enumeration and evaluation during
+                # a navigation. That is normal, not a failure of perception.
+                return None
+
+        payloads = await asyncio.gather(*(extract(frame) for _, frame in frames))
+
+        for frame_index, ((path, _frame), payload) in enumerate(zip(frames, payloads)):
             if not payload:
                 continue
 
@@ -179,6 +192,7 @@ class WebSurface(Surface):
                         frame_path=path,
                         section=raw.get("section", ""),
                         row_text=raw.get("row_text", ""),
+                        row_peers=tuple(raw.get("row_peers", []) or []),
                         rect=Rect(**rect_raw) if rect_raw else None,
                         attributes=raw.get("attributes", {}) or {},
                         handle=(path, raw["ref"]),
@@ -358,12 +372,17 @@ class WebSurface(Surface):
             # below still applies, and the observation reports what is there.
             pass
 
-        for frame in list(self._page.frames):
+        # Each frame's wait is independent of every other frame's, so waiting
+        # on them one at a time serialized their timeouts instead of being
+        # bounded by the slowest one -- and _settle() runs after essentially
+        # every action in both discovery and replay.
+        async def wait_for_frame(frame: Frame) -> None:
             try:
                 await frame.wait_for_load_state("load", timeout=timeout_ms)
             except PlaywrightError:
-                continue
+                pass
 
+        await asyncio.gather(*(wait_for_frame(frame) for frame in self._page.frames))
         await self._page.wait_for_timeout(quiet_ms)
 
     # -- evidence --------------------------------------------------------
@@ -403,8 +422,4 @@ class WebSurface(Surface):
         return path
 
 
-async def launch_web_surface(headless: bool = False) -> WebSurface:
-    return await WebSurface.launch(headless=headless)
-
-
-__all__ = ["WebSurface", "launch_web_surface", "asyncio"]
+__all__ = ["WebSurface"]

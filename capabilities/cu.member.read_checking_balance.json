@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
-  "capability_id": "cu.member.open_subaccount",
+  "capability_id": "cu.member.read_checking_balance",
   "version": 1,
-  "name": "Open a member sub-account",
-  "description": "Open a new sub-account for a member and return the confirmation reference.",
+  "name": "Read a member's checking balance",
+  "description": "Look up a member and read their current checking account balance.",
   "surface": {
     "kind": "web",
     "entry_point": "http://127.0.0.1:9090/",
@@ -18,49 +18,22 @@
       "required": true,
       "sensitive": false,
       "enum_values": null,
-      "example": "10077"
-    },
-    {
-      "name": "account_type",
-      "type": "string",
-      "description": "Value supplied for account_type.",
-      "required": true,
-      "sensitive": false,
-      "enum_values": null,
-      "example": "Checking"
-    },
-    {
-      "name": "nickname",
-      "type": "string",
-      "description": "Value supplied for nickname.",
-      "required": true,
-      "sensitive": false,
-      "enum_values": null,
-      "example": "Everyday Spend"
-    },
-    {
-      "name": "initial_deposit",
-      "type": "string",
-      "description": "Value supplied for initial_deposit.",
-      "required": true,
-      "sensitive": false,
-      "enum_values": null,
-      "example": "400"
+      "example": "10133"
     }
   ],
   "outputs": [
     {
-      "name": "reference_number",
+      "name": "checking_balance",
       "type": "string",
-      "description": "Reference number as displayed by the application.",
-      "produced_by_step": "s10",
+      "description": "Checking balance as displayed by the application.",
+      "produced_by_step": "s5",
       "sensitive": false
     }
   ],
   "steps": [
     {
       "id": "s1",
-      "intent": "Sign in is required before any servicing work; entering an operator ID.",
+      "intent": "Sign-in is required before member lookup; entering an operator ID.",
       "action": {
         "type": "type_text",
         "value": {
@@ -120,7 +93,7 @@
     },
     {
       "id": "s2",
-      "intent": "Sign in to the servicing system to begin the account opening flow.",
+      "intent": "Sign in to the servicing system to access member lookup.",
       "action": {
         "type": "click"
       },
@@ -192,7 +165,7 @@
     },
     {
       "id": "s3",
-      "intent": "Enter the member number to locate member {{param.member_id}}.",
+      "intent": "Enter the member ID to search for the member's record.",
       "action": {
         "type": "type_text",
         "value": {
@@ -252,7 +225,7 @@
     },
     {
       "id": "s4",
-      "intent": "Search for member {{param.member_id}} to open their record.",
+      "intent": "Submit the member number search to find member {{param.member_id}}.",
       "action": {
         "type": "click"
       },
@@ -324,340 +297,17 @@
     },
     {
       "id": "s5",
-      "intent": "Open the sub-account creation form for member {{param.member_id}}.",
-      "action": {
-        "type": "click"
-      },
-      "target": {
-        "role": "link",
-        "accessible_name": "Open Sub-Account",
-        "name_match": "normalized",
-        "name_source": "accessible_name",
-        "anchors": [
-          {
-            "kind": "frame",
-            "value": "contentframe"
-          },
-          {
-            "kind": "heading",
-            "value": "Member Detail"
-          }
-        ],
-        "ordinal": null,
-        "fallbacks": [
-          {
-            "kind": "bbox",
-            "value": "",
-            "bbox": {
-              "x": 8.0,
-              "y": 403.0,
-              "width": 92.8125,
-              "height": 12.800000190734863
-            }
-          }
-        ],
-        "robustness_note": "Matched on role plus the accessible name 'Open Sub-Account', which is vendor-supplied and survives tenant re-branding of layout and styling. Anchored to contentframe > Member Detail to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
-        "recorded_confidence": 1.0
-      },
-      "wait": {
-        "settle_ms": 250,
-        "timeout_ms": 10000,
-        "await_navigation": true,
-        "until": null
-      },
-      "checkpoint": {
-        "id": "c5",
-        "description": "Reached the 'Open Sub-Account' state.",
-        "assertions": [
-          {
-            "kind": "text_present",
-            "text": "Open Sub-Account",
-            "match": "contains",
-            "target": null,
-            "scope": [
-              {
-                "kind": "frame",
-                "value": "contentframe"
-              }
-            ],
-            "description": "'Open Sub-Account' is present in contentframe"
-          }
-        ],
-        "timeout_ms": 10000
-      },
-      "recovery_ids": [
-        "dismiss_system_notice",
-        "wait_out_transient_slowness",
-        "reauthenticate_after_timeout"
-      ],
-      "risk": "safe",
-      "min_confidence": 0.7,
-      "approved_risky": false
-    },
-    {
-      "id": "s6",
-      "intent": "Enter the declared nickname for the new account.",
-      "action": {
-        "type": "type_text",
-        "value": {
-          "kind": "param",
-          "literal": null,
-          "param": "nickname",
-          "template": null
-        },
-        "clear_first": true
-      },
-      "target": {
-        "role": "textbox",
-        "accessible_name": "Account Nickname",
-        "name_match": "normalized",
-        "name_source": "adjacent_label",
-        "anchors": [
-          {
-            "kind": "frame",
-            "value": "contentframe"
-          },
-          {
-            "kind": "heading",
-            "value": "New Account"
-          }
-        ],
-        "ordinal": null,
-        "fallbacks": [
-          {
-            "kind": "bbox",
-            "value": "",
-            "bbox": {
-              "x": 178.1999969482422,
-              "y": 178.8000030517578,
-              "width": 158.40000915527344,
-              "height": 18.0
-            }
-          }
-        ],
-        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Account Nickname', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > New Account to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
-        "recorded_confidence": 0.8
-      },
-      "wait": {
-        "settle_ms": 250,
-        "timeout_ms": 10000,
-        "await_navigation": false,
-        "until": null
-      },
-      "checkpoint": null,
-      "recovery_ids": [
-        "dismiss_system_notice",
-        "wait_out_transient_slowness",
-        "reauthenticate_after_timeout"
-      ],
-      "risk": "safe",
-      "min_confidence": 0.7,
-      "approved_risky": false
-    },
-    {
-      "id": "s7",
-      "intent": "Enter the declared initial deposit amount.",
-      "action": {
-        "type": "type_text",
-        "value": {
-          "kind": "param",
-          "literal": null,
-          "param": "initial_deposit",
-          "template": null
-        },
-        "clear_first": true
-      },
-      "target": {
-        "role": "textbox",
-        "accessible_name": "Initial Deposit",
-        "name_match": "normalized",
-        "name_source": "adjacent_label",
-        "anchors": [
-          {
-            "kind": "frame",
-            "value": "contentframe"
-          },
-          {
-            "kind": "heading",
-            "value": "New Account"
-          }
-        ],
-        "ordinal": null,
-        "fallbacks": [
-          {
-            "kind": "bbox",
-            "value": "",
-            "bbox": {
-              "x": 178.1999969482422,
-              "y": 202.8000030517578,
-              "width": 91.20000457763672,
-              "height": 18.0
-            }
-          }
-        ],
-        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Initial Deposit', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > New Account to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
-        "recorded_confidence": 0.8
-      },
-      "wait": {
-        "settle_ms": 250,
-        "timeout_ms": 10000,
-        "await_navigation": false,
-        "until": null
-      },
-      "checkpoint": null,
-      "recovery_ids": [
-        "dismiss_system_notice",
-        "wait_out_transient_slowness",
-        "reauthenticate_after_timeout"
-      ],
-      "risk": "safe",
-      "min_confidence": 0.7,
-      "approved_risky": false
-    },
-    {
-      "id": "s8",
-      "intent": "Set the account type to {{param.account_type}} as required by the goal.",
-      "action": {
-        "type": "select_option",
-        "value": {
-          "kind": "param",
-          "literal": null,
-          "param": "account_type",
-          "template": null
-        }
-      },
-      "target": {
-        "role": "combobox",
-        "accessible_name": "Account Type",
-        "name_match": "normalized",
-        "name_source": "adjacent_label",
-        "anchors": [
-          {
-            "kind": "frame",
-            "value": "contentframe"
-          },
-          {
-            "kind": "heading",
-            "value": "New Account"
-          }
-        ],
-        "ordinal": null,
-        "fallbacks": [
-          {
-            "kind": "bbox",
-            "value": "",
-            "bbox": {
-              "x": 178.1999969482422,
-              "y": 153.1999969482422,
-              "width": 96.0,
-              "height": 19.600000381469727
-            }
-          }
-        ],
-        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Account Type', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > New Account to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
-        "recorded_confidence": 0.8
-      },
-      "wait": {
-        "settle_ms": 250,
-        "timeout_ms": 10000,
-        "await_navigation": false,
-        "until": null
-      },
-      "checkpoint": null,
-      "recovery_ids": [
-        "dismiss_system_notice",
-        "wait_out_transient_slowness",
-        "reauthenticate_after_timeout"
-      ],
-      "risk": "safe",
-      "min_confidence": 0.7,
-      "approved_risky": false
-    },
-    {
-      "id": "s9",
-      "intent": "All fields are filled correctly; submitting opens the sub-account to obtain the confirmation reference number.",
-      "action": {
-        "type": "click"
-      },
-      "target": {
-        "role": "button",
-        "accessible_name": "Open Sub-Account",
-        "name_match": "normalized",
-        "name_source": "accessible_name",
-        "anchors": [
-          {
-            "kind": "frame",
-            "value": "contentframe"
-          },
-          {
-            "kind": "heading",
-            "value": "Open Sub-Account"
-          }
-        ],
-        "ordinal": null,
-        "fallbacks": [
-          {
-            "kind": "bbox",
-            "value": "",
-            "bbox": {
-              "x": 19.600000381469727,
-              "y": 269.8000183105469,
-              "width": 120.01250457763672,
-              "height": 20.0
-            }
-          }
-        ],
-        "robustness_note": "Matched on role plus the accessible name 'Open Sub-Account', which is vendor-supplied and survives tenant re-branding of layout and styling. Anchored to contentframe > Open Sub-Account to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
-        "recorded_confidence": 1.0
-      },
-      "wait": {
-        "settle_ms": 250,
-        "timeout_ms": 10000,
-        "await_navigation": true,
-        "until": null
-      },
-      "checkpoint": {
-        "id": "c9",
-        "description": "Reached the 'Sub-Account Opened' state.",
-        "assertions": [
-          {
-            "kind": "text_present",
-            "text": "Sub-Account Opened",
-            "match": "contains",
-            "target": null,
-            "scope": [
-              {
-                "kind": "frame",
-                "value": "contentframe"
-              }
-            ],
-            "description": "'Sub-Account Opened' is present in contentframe"
-          }
-        ],
-        "timeout_ms": 10000
-      },
-      "recovery_ids": [
-        "dismiss_system_notice",
-        "wait_out_transient_slowness",
-        "reauthenticate_after_timeout"
-      ],
-      "risk": "irreversible",
-      "min_confidence": 0.7,
-      "approved_risky": false
-    },
-    {
-      "id": "s10",
-      "intent": "Capture the confirmation reference number for the newly opened sub-account.",
+      "intent": "This cell holds the balance for the Checking account row of member {{param.member_id}}.",
       "action": {
         "type": "extract",
-        "output": "reference_number",
+        "output": "checking_balance",
         "source": "text",
         "attribute": null,
         "pattern": null
       },
       "target": {
         "role": "cell",
-        "accessible_name": "Reference Number",
+        "accessible_name": "Balance",
         "name_match": "normalized",
         "name_source": "adjacent_label",
         "anchors": [
@@ -667,28 +317,32 @@
           },
           {
             "kind": "heading",
-            "value": "Transaction Detail"
+            "value": "Accounts"
+          },
+          {
+            "kind": "container_text",
+            "value": "Checking"
           }
         ],
         "ordinal": null,
         "fallbacks": [
           {
             "kind": "text",
-            "value": "Reference NumberSA-797193",
+            "value": "Checking0024-1188$45.6008/17/2023",
             "bbox": null
           },
           {
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 185.1999969482422,
-              "y": 157.40000915527344,
-              "width": 142.9875030517578,
-              "height": 18.80000114440918
+              "x": 341.26251220703125,
+              "y": 362.20001220703125,
+              "width": 131.03750610351562,
+              "height": 17.600000381469727
             }
           }
         ],
-        "robustness_note": "Data cell identified by its neighbouring label 'Reference Number'. The cell's own text is the value being read and changes with every record, so the label is the only stable identifier; matching on the cell's text would pin this capability to a single member. Anchored to contentframe > Transaction Detail to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "robustness_note": "Data cell identified by its neighbouring label 'Balance'. The cell's own text is the value being read and changes with every record, so the label is the only stable identifier; matching on the cell's text would pin this capability to a single member. Anchored to contentframe > Accounts > Checking to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
         "recorded_confidence": 0.8
       },
       "wait": {
@@ -816,20 +470,18 @@
     }
   ],
   "risk": {
-    "contains_irreversible": true,
-    "irreversible_step_ids": [
-      "s9"
-    ],
-    "notes": "Contains at least one irreversible step; unattended replay is gated on review."
+    "contains_irreversible": false,
+    "irreversible_step_ids": [],
+    "notes": "All steps are read-only or reversible."
   },
   "provenance": {
-    "discovery_run_id": "discovery-20260825-181015-7e3023",
+    "discovery_run_id": "discovery-20260825-202449-68df72",
     "provider": "anthropic",
     "model": "claude-opus-5",
-    "recorded_at": "2026-08-25T18:11:20.428503Z",
-    "steps_explored": 10,
-    "human_assisted": true,
-    "human_action_count": 1
+    "recorded_at": "2026-08-25T20:25:13.766473Z",
+    "steps_explored": 5,
+    "human_assisted": false,
+    "human_action_count": 0
   },
   "approval": "draft"
 }

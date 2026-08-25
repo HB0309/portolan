@@ -422,6 +422,15 @@ def subaccount_submit(
 
 def main() -> None:
     import uvicorn
+    from dotenv import load_dotenv
+
+    # cua/cli.py loads .env for every discover/replay invocation; this never
+    # did, so MOCKAPP_HOST/MOCKAPP_PORT in .env silently did nothing when the
+    # app was launched directly with `python -m mockapp` -- os.environ only
+    # sees a real exported shell variable, never the .env file's contents,
+    # without this. Found changing the default port away from 8080: the app
+    # kept starting on 8080 regardless of what .env said.
+    load_dotenv()
 
     host = os.environ.get("MOCKAPP_HOST", "127.0.0.1")
     port = int(os.environ.get("MOCKAPP_PORT", "8080"))

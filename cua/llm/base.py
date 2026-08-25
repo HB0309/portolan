@@ -19,8 +19,19 @@ that fails validation is a refusal rather than a best-effort guess.
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
+
+
+def resolve_setting(value: str | None, env_var: str, default: str | None = None) -> str | None:
+    """An explicit argument wins, then the named env var, then the default.
+
+    Both provider constructors (api key, model, and openai_provider's base
+    url) implemented this same three-way precedence independently before
+    this existed -- one place to change the rule later.
+    """
+    return value or os.environ.get(env_var) or default
 
 
 @dataclass

@@ -101,19 +101,6 @@ class CapabilityCatalog:
             for capability in self.capabilities
         ]
 
-    def openai_tools(self) -> list[dict[str, Any]]:
-        return [
-            {
-                "type": "function",
-                "function": {
-                    "name": tool["name"],
-                    "description": tool["description"],
-                    "parameters": tool["input_schema"],
-                },
-            }
-            for tool in self.tool_definitions()
-        ]
-
     def resolve_tool_name(self, tool_name: str) -> Capability | None:
         for capability in self.capabilities:
             if capability.capability_id.replace(".", "_") == tool_name:

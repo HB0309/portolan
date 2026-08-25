@@ -7,7 +7,7 @@ from cua.discovery.orchestrator import (
     InterventionOutcome,
     new_run_id,
 )
-from cua.discovery.recorder import CapabilityRecorder, RecorderError, slugify
+from cua.discovery.recorder import CapabilityRecorder, RecorderError
 from cua.discovery.tools import tool_definitions
 
 __all__ = [
@@ -18,6 +18,5 @@ __all__ = [
     "InterventionOutcome",
     "RecorderError",
     "new_run_id",
-    "slugify",
     "tool_definitions",
 ]

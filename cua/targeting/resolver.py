@@ -163,6 +163,11 @@ def _rung_candidates(
 ) -> list[Element]:
     target = descriptor.accessible_name or ""
     want_role = descriptor.role
+    # normalize() is a regex substitution; target is loop-invariant across
+    # every candidate at a given rung, so normalizing it once here instead of
+    # inside each comprehension avoids redoing the same substitution per
+    # element, on every rung tried, on every resolve() call in the hot loop.
+    normalized_target = normalize(target)
 
     if rung.number == 1:
         return [e for e in scoped if e.role == want_role and _primary(e, descriptor) == target]
@@ -171,8 +176,7 @@ def _rung_candidates(
         return [
             e
             for e in scoped
-            if e.role == want_role
-            and normalize(_primary(e, descriptor)) == normalize(target)
+            if e.role == want_role and normalize(_primary(e, descriptor)) == normalized_target
         ]
 
     if rung.number == 3:
@@ -182,8 +186,7 @@ def _rung_candidates(
         return [
             e
             for e in scoped
-            if e.role == want_role
-            and normalize(_secondary(e, descriptor)) == normalize(target)
+            if e.role == want_role and normalize(_secondary(e, descriptor)) == normalized_target
         ]
 
     if rung.number == 4:
@@ -195,14 +198,16 @@ def _rung_candidates(
         ]
 
     if rung.number == 5:
-        needle = normalize(target)
-        if not needle:
+        if not normalized_target:
             return []
         return [
             e
             for e in scoped
             if e.role == want_role
-            and (needle in normalize(e.row_text) or needle in normalize(e.section))
+            and (
+                normalized_target in normalize(e.row_text)
+                or normalized_target in normalize(e.section)
+            )
         ]
 
     if rung.number == 6:
@@ -211,8 +216,8 @@ def _rung_candidates(
         return [
             e
             for e in scoped
-            if normalize(e.name) == normalize(target)
-            or normalize(e.label_hint) == normalize(target)
+            if normalize(e.name) == normalized_target
+            or normalize(e.label_hint) == normalized_target
         ]
 
     return []
@@ -258,10 +263,43 @@ def resolve(
     """
     scoped = [e for e in observation.actionable() if in_scope(e, descriptor)]
     if not scoped:
-        # Anchors may reference a section that is not on this page at all. Fall
-        # back to the whole observation so the failure message can say what *was*
-        # there rather than nothing.
-        scoped = observation.actionable()
+        # Anchors may reference a section that is not on this page at all --
+        # falling back to the whole observation lets the failure message say
+        # what *was* there rather than nothing. But that fallback has to stop
+        # at the structural anchors (frame, heading, label): those describe
+        # where the control lives, and their absence is drift worth a better
+        # error for. A CONTAINER_TEXT anchor is different in kind -- it
+        # describes *whether a specific row exists at all*, and its absence
+        # is often the correct, final answer rather than drift.
+        #
+        # Found live, reading a member's checking balance when they have
+        # none: the structural anchors (frame, "Accounts" heading) matched
+        # fine -- only the row saying "Checking" didn't exist -- and falling
+        # all the way back to every cell on the page let rung 1 match the
+        # member's *Savings* balance instead, silently returning the wrong
+        # account's number as the answer. If the structural area is present
+        # and only a content anchor came up empty, that emptiness has to be
+        # respected, not argued away by widening the search until something
+        # else happens to fit.
+        content_anchors = [a for a in descriptor.anchors if a.kind is AnchorKind.CONTAINER_TEXT]
+        structural_anchors = [
+            a for a in descriptor.anchors if a.kind is not AnchorKind.CONTAINER_TEXT
+        ]
+        # With no structural anchors at all, matches_anchors(e, []) is
+        # vacuously true for every element on any non-empty page -- "the
+        # structural area is present" would always hold whether or not it
+        # actually is, which defeats the point of checking. A descriptor
+        # with only a content anchor and nothing confirming where it lives
+        # gets the benefit of the doubt (fall back and widen), the same as
+        # before this fix; only a structural anchor that genuinely matched
+        # something earns the right to trust an empty content match as final.
+        structural_matches = bool(structural_anchors) and any(
+            matches_anchors(e, structural_anchors) for e in observation.actionable()
+        )
+        if content_anchors and structural_matches:
+            scoped = []
+        else:
+            scoped = observation.actionable()
 
     near_misses: list[Element] = []
 

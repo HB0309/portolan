@@ -69,7 +69,7 @@ def render_element(element: Element) -> str:
         bits.append(f'"{element.name}"')
     if element.label_hint and element.label_hint != element.name:
         bits.append(f"label:{element.label_hint!r}")
-    if element.value and element.role == "textbox":
+    if element.value and element.role in {"textbox", "combobox"}:
         bits.append(f"value:{element.value!r}")
     if element.section:
         bits.append(f"in:{element.section!r}")

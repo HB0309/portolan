@@ -747,3 +747,358 @@ myself," not an auto-refresh) is what pointed at a real request-timing race
 instead of a rendering or caching issue, which the previous three attempts
 (D25's stale screenshot, D28's crash, and the caching/redirect work before
 that) had already ruled out one at a time.
+
+## D30 — Auto-refresh is switched off entirely once a card is showing
+
+**Decision.** The console's `<meta http-equiv="refresh">` tag is only ever
+emitted while idle (no open interventions, waiting for the next one to
+appear). The moment any escalation card is on screen -- whether unclaimed or
+already in the operator's control -- the tag is omitted entirely.
+
+**Why.** Found live, the fifth distinct bug from the same reported symptom
+this session: an operator's "Take control" click produced no server-side
+effect at all -- no error, no crash, nothing in the evidence log, meaning the
+POST request never reached the handler. The console's escalation cards were
+rendered on a 3-second auto-refresh. A browser can only run one navigation at
+a time, and a form submission is a navigation: if the meta-refresh's
+scheduled reload lands while a POST is still in flight, the reload wins and
+the click's own request is abandoned client-side before it is ever sent to
+the server. A realistic human's time to read an escalation card and click a
+button -- a second or two -- sits squarely inside a 3-second period, which
+makes this collision close to the default outcome for a real person, not a
+rare coincidence. D25 through D29 each fixed something real (a stale
+screenshot, a crash on a duplicate request, an ordering bug, a slow
+response), and every one of them was necessary -- but none of them could have
+fixed a click that never left the browser in the first place, which is why
+the same complaint kept surviving each fix.
+
+Auto-refresh while a card is showing was never buying anything besides this
+risk: nothing on an open card changes on its own. It exists to change
+between requests -- the operator acts, and every action already lands on a
+freshly rendered page via its own redirect. The only genuine use for polling
+is noticing a *new* escalation while looking at the idle "no open
+interventions" screen, which is exactly the one case this keeps.
+
+**Cost.** None found. An operator who leaves a card open and does nothing
+will not see it self-update, but nothing on it was ever going to change
+without their own action regardless.
+
+**How it was found.** By checking the one thing all four prior fixes hadn't:
+whether the click's request reached the server at all. The evidence log's
+`control.granted` line is unconditional the moment a handoff actually
+executes; its total absence, combined with the exact refresh period lining
+up with realistic human reaction time, pointed at a navigation race rather
+than anything server-side left to fix.
+
+## D31 — MOCKAPP_HOST/PORT and CONSOLE_PORT are honoured everywhere, not just some places
+
+**Decision.** Every place a port could be hardcoded now instead defaults from
+the environment, consistently: `cua/cli.py`'s `--target` and `--console-port`
+defaults, `mockapp/app.py`'s own launcher (which now actually calls
+`load_dotenv()`), `cua/policy/engine.py`'s origin allowlist (additively, on
+top of whatever `policy.yaml` already lists), and the integration test
+fixtures' target URL and allowlist expectations.
+
+**Why.** 8080/8081 are common enough that a developer running
+this alongside other local work may already have them taken. Changing
+`MOCKAPP_PORT` in `.env` looked like it should be enough -- `.env.example`
+documents it -- but four different places each had their own idea of the
+port, independently:
+
+1. `mockapp/app.py`'s launcher read `os.environ` directly and never called
+   `load_dotenv()`, so `.env`'s value never reached it at all; the app kept
+   silently starting on 8080 regardless of what was configured.
+2. `cua/cli.py`'s `--target`/`--console-port` defaults were literal strings,
+   not environment-derived, so every invocation needed the new port passed
+   by hand.
+3. `cua/policy/engine.py`'s origin allowlist is loaded once from
+   `policy.yaml`, which lists the mock app's origin explicitly for a
+   reviewer cloning fresh -- correct for that case, but with nothing to keep
+   it in sync with a locally-changed port, navigating to the new origin was
+   DENIED outright rather than reaching the action being tested.
+4. The integration tests hardcoded `127.0.0.1:8080` for both "is the app
+   running" detection and the fixture capability's entry point, so they
+   would have silently skipped (or run against the wrong port) rather than
+   testing anything real.
+
+Each of these was found by actually trying to change the port and watching
+something fail in a different way than expected, not by auditing for the
+pattern up front.
+
+**Cost.** None found. Every default is unchanged when the environment
+variable is unset; this only removes places that used to ignore it.
+
+**How it was found.** By a real request to move off 8080/8081 because they
+were needed for something else -- the kind of environment friction no test
+suite surfaces on its own, since the suite's own defaults matched the
+hardcoded values everywhere.
+
+## D32 — A senior-engineer pass over the codebase
+
+**Decision.** Four parallel reviews (reuse, simplification, efficiency,
+altitude) over `cua/` and `mockapp/`, followed by fixing everything that
+passed the bar. One genuine bug, six pieces of dead code, three efficiency
+hoists in hot paths, and two cross-cutting consolidations landed; a few
+plausible-looking findings were deliberately left alone.
+
+**What was fixed:**
+- `ReplayEngine._escalations` (`replay/engine.py`) was declared and read in
+  three places -- `ReplayResult.escalations`, `FailureReport.escalated`, the
+  per-escalation screenshot label -- but nothing ever appended to it.
+  `result.escalations` was silently always `[]`, `escalated` was silently
+  always `False`, and a second escalation in one run overwrote the first
+  one's screenshot. Not found by any existing test; the integration test
+  that exercises `_escalate()` for real never asserted on the result it got
+  back. Fixed and now asserted on.
+- Six dead members removed after grepping every caller: `CapabilityCatalog.
+  openai_tools()`, `launch_web_surface()` (plus the unused `asyncio` it
+  existed to smuggle into `web.py`'s `__all__`), `EvidenceRecorder.note_ref()`,
+  `slugify()`.
+- Three loop-invariant/independent-work hoists: `tool_definitions()` was
+  rebuilt from scratch on every discovery step despite being constant for
+  the whole run; `_rung_candidates()` re-normalized the loop-invariant
+  target string inside four separate per-element comprehensions; `observe()`
+  and `_settle()` in `web.py` walked a frameset's frames with one sequential
+  `await` per frame where each frame's CDP round trip has no dependency on
+  any other's, on what is the hot path for every discovery and replay step.
+- Two consolidations, both independently flagged by more than one review
+  angle: `MOCKAPP_HOST`/`MOCKAPP_PORT`/`CONSOLE_PORT` were each read from the
+  environment independently in `cli.py`, `policy/engine.py`, and the test
+  fixtures (three copies of the exact drift D31 had just fixed once), now
+  collected into `cua/config.py`. Deliberately *not* shared with
+  `mockapp/app.py` -- that module represents the target application, which
+  this project's own layering keeps foreign to `cua`; the two sides agree on
+  an env-var convention, not on shared code, and importing `cua` into the
+  thing `cua` automates would invert that on purpose. Separately,
+  `AnthropicProvider` and `OpenAIProvider` each implemented the same
+  "explicit arg, else env var, else default" precedence by hand for their
+  key/model/base-url; both now call one `resolve_setting()` in `llm/base.py`.
+
+**What was deliberately left alone**, and why:
+- `ControlToken.wait_until_resumed()`/`_resumed` (`session/control.py`) --
+  unused by the current broker (which needed a return value an `Event`
+  can't carry, so it built its own wait on a `Future`), but it is a
+  legitimate, directly-tested general primitive on the control FSM, not
+  accidental cruft. `EscalationBroker.take_control()` (D25/D28/D29) reads
+  coherently as one operation, each of its three point-fixes addressing a
+  genuinely distinct failure -- not treated as a rewrite candidate.
+- The rate-limit retry (D24) and the wall-clock human-time exclusion (D27)
+  solve structurally different problems (bounded retry-or-fail vs.
+  unbounded-wait time-exclusion) and were kept separate rather than forced
+  into one shared abstraction.
+- Schema-level enforcement of "no caller literal reaches a string field" (a
+  `field_validator` replacing the three `_scrub_text` call sites) is a real,
+  defensible idea, but a bigger and riskier change to a safety-critical
+  mechanism than the rest of this pass warranted than the rest of this pass -- left as a
+  documented option, not attempted here.
+- `SESSION_UNRECOVERABLE` (never produced), `ControlToken.human_action_count`
+  (write-only, duplicating `len(SessionManager.human_actions)`), and
+  `CapabilityRecorder.record()`'s `input_specs`/`product_version` parameters
+  (only exercised from tests) were each judged low-value, non-zero-risk
+  touches to code that is either a deliberate taxonomy placeholder or already
+  covered by its own tests -- noted rather than changed.
+
+**Cost.** None found beyond the touched files' own diffs; full suite (130
+tests, including the two real-browser integration tests) passes, and a live
+replay against the approved capability was re-verified end to end after the
+`web.py` concurrency changes specifically, since those touch the hot path
+every other fix this session depended on being correct.
+
+**How it was found.** Four review agents given the same codebase and
+different angles, explicitly instructed to say so rather than manufacture a
+finding when a pattern was already the right shape -- two of them did
+exactly that for `take_control()` and the retry/wall-clock split, which is
+part of why their other findings were trusted enough to act on directly.
+
+## D33 — A selected combobox shows its current value in the prompt
+
+**Decision.** `render_element` (`cua/discovery/prompts.py`) echoes a
+control's current `value` for `role in {"textbox", "combobox"}`, not just
+`"textbox"`.
+
+**Why.** Found running a deliberately varied test matrix against goals never
+tried before: a discovery run picked "Holiday Club" from the Account Type
+dropdown, then picked it again, and again -- 17 times across 25 available
+steps, never reaching the submit button it had already correctly resolved
+and was one click away from. The selection was working; `select_option`
+genuinely sets the underlying `<select>`'s value. What was missing was any
+way for the model to *see* that it had worked: every prior observation of
+that control looked identical to the one before the first selection,
+because `render_element` only ever included a control's value in the text
+shown to the model when its role was `"textbox"` -- a `<select>` is role
+`"combobox"`, so it was silently excluded. The model's own stated reasoning
+across all 17 attempts said exactly this: "Account Type still shows
+unselected." It wasn't wrong about what it could see. What it could see was
+incomplete.
+
+A text field with an unconfirmed value fails visibly and fast -- the field
+still looks empty. A dropdown with an unconfirmed value fails by exhausting
+the entire step budget on a single control, silently, because there is
+nothing else for the model to try that would look any different.
+
+**Cost.** None found. An unselected combobox's value is `""`, which the
+existing `if element.value` guard already treats as nothing to show, so the
+placeholder ("< select >") state is unaffected.
+
+**How it was found.** By deliberately running discovery against goals and
+account types the system had never been asked to handle before, specifically
+to find limits rather than re-confirm known-good paths -- this exact
+17-select_option pattern had actually appeared once earlier in this same
+session, dismissed at the time as the model working through something odd
+rather than recognised as a reproducible, fixable bug in what the model was
+being shown.
+
+## D34 — CLI output is reconfigured to UTF-8 with a safe fallback
+
+**Decision.** `cli.py` reconfigures `sys.stdout` and `sys.stderr` to
+`encoding="utf-8", errors="replace"` once, at import time, rather than
+guarding individual `typer.echo()` calls.
+
+**Why.** Found running an injected-500 replay for real: the CLI's own
+failure report crashed with `UnicodeEncodeError` while printing the
+`observed` text it had just correctly captured -- the target application's
+window chrome ("X`□`_", period-accurate faux window controls) contains a
+character Windows' default console codepage (cp1252) cannot represent, and
+neither `typer.echo()` nor Python's default stdout encoding falls back; they
+raise. The run had succeeded at everything that matters -- detecting the
+failure, classifying it, capturing the right evidence -- and then the last
+step, reporting that back to whoever ran the command, was what broke.
+
+This is a general problem, not a one-line problem: any real application's UI
+text is uncontrolled input as far as this CLI's own output is concerned, and
+the specific character that broke this run says nothing about which
+character breaks the next one. Guarding the one `typer.echo(observed)` call
+that happened to crash first would still leave every other line -- an
+`intent`, a `summary`, a member name -- exposed to the same class of crash.
+Reconfiguring the streams once covers all of them.
+
+**Cost.** A character truly outside Unicode cannot occur (mangled bytes from
+a decoding error further upstream are a different, prior problem), so
+`errors="replace"` degrading to `?` is not expected to fire in practice; if
+it ever does, a `?` in a report is a far better outcome than the whole
+command dying on its last line.
+
+**How it was found.** By replaying an injected hard failure for real and
+reading past the tail of a truncated terminal panel rather than assuming a
+non-zero exit meant only the thing being tested had failed -- the replay
+itself worked exactly as intended; the crash was one layer further out, in
+the reporting of a result that was already correct.
+
+## D35 — A data-grid cell's label is its column header, not its left neighbour
+
+**Decision.** `labelHint()` (`cua/perception/extract.js`) tells two table
+shapes apart by row width. Rows with two cells (a caption and a value,
+repeated down a form) keep the existing left-neighbour behaviour unchanged.
+Rows with more than two cells that aren't spanning a rowspan (a genuine
+multi-column data grid) skip the left-neighbour walk entirely and read the
+header cell at the table's actual first row, at the same column position.
+
+**Why.** Found asking a question about a capability that looked fine:
+"will asking for a different member's checking balance also just replay?"
+It didn't. `cu.member.read_checking_balance` had recorded its Balance cell's
+identity as `"0024-1188"` -- the neighbouring *account number* cell's text,
+not a label at all -- because `labelHint()` always tried the cell to the
+left first, and for a multi-column grid row the cell to the left is another
+data value, never a caption. It worked for the one member it was recorded
+against purely by coincidence (the resolver matched the literal account
+number back to itself) and failed outright, `element_not_found`, for every
+other member, since account numbers are unique per record.
+
+The existing "row above" fallback already existed for exactly this shape of
+problem, but was gated to never run for a raw table cell at all -- only for
+an interactive control embedded in one. Splitting on row width, not element
+type, is what turns that dead path into the primary one for grid cells while
+leaving every already-correct label/value form (login, search, the
+sub-account form, the Balance Summary panel) untouched.
+
+Two corrections landed inside the same fix, both found by actually running
+it rather than reasoning about it in the abstract:
+- Raw cell *count* over-counted a row carrying a `rowspan` cell for
+  something unrelated (this app's search form: a two-cell label/value row
+  plus a submit button spanning three rows down the side) -- a rowspan cell
+  is never a repeating column, so only cells starting fresh on a row count
+  toward its width.
+- "The row above" is only the header for a grid's *first* data row -- for
+  a second account in a list, the row above is the first account's row, not
+  the header, and has the same width. The header is the table's genuine
+  first row, however many data rows deep the current one is, not whichever
+  row happens to be one sibling up.
+
+**Cost.** None found. The heuristic is right for the common legacy shapes
+(paired-row forms, header-plus-columns grids) this project targets, not a
+proof for every table shape anyone could author -- the same honest limit
+already accepted for the irreversible-action name matcher elsewhere in this
+project.
+
+**How it was found.** By being asked, directly, whether a capability that
+looked correct would actually generalize to a case nobody had tried -- and
+checking rather than assuming, twice over, since the first fix introduced a
+real regression (the rowspan miscount) that only running it against the
+existing capability suite caught.
+
+## D36 — A row that doesn't exist is a real answer, not a reason to guess
+
+**Decision.** `resolve()` (`cua/targeting/resolver.py`) only falls back from
+an empty anchored scope to the whole unfiltered observation when the
+descriptor's *structural* anchors (frame, heading, label) matched nothing.
+If the structural area is present and only a `CONTAINER_TEXT` anchor came up
+empty, the empty scope is respected -- the search is not widened until
+something else happens to match.
+
+**Why.** D35's column-header fix solved "which column" but not "which row":
+a Balance cell's label is the same ("Balance") for every account a member
+has, so a member with both a Savings and a Checking account made the
+descriptor genuinely ambiguous. The fix was a `CONTAINER_TEXT` anchor
+recording the row's own category (its first peer cell that reads as a label
+rather than a value, reusing the same test a generated checkpoint marker
+already uses to avoid pinning itself to one record) -- "this row says
+Checking" -- which correctly disambiguates a member with several accounts.
+
+But `resolve()`'s existing behaviour on an empty scope is to fall back to
+every candidate on the page, written for a different failure shape entirely
+(an anchor naming a whole section that drifted off the page, where a better
+error message is worth widening the search for). Found live, immediately
+after fixing the ambiguity case: a member with *no* checking account at all
+-- structural anchors matched fine, only the "Checking" row genuinely didn't
+exist -- fell back to every cell on the page, and rung 1 matched that
+member's *Savings* balance instead, since it was the only cell left still
+named "Balance." The result was `status: success`, with someone else's
+account balance silently reported as if it were the one asked for -- worse
+than the ambiguity case, which at least refused outright.
+
+A `CONTAINER_TEXT` anchor's whole purpose is to say "does this specific row
+exist," and its absence is frequently the correct, final answer -- not
+drift to be argued past. Splitting the fallback on anchor kind is what lets
+"the section is missing" keep getting a helpful wide-search error message
+while "the row doesn't exist" gets an honest `NOT_FOUND` instead of a wrong
+answer dressed as a right one.
+
+**Cost.** None found. One existing capability
+(`cu.member.read_checking_balance`) does use a `CONTAINER_TEXT` anchor,
+being exactly the one D35's fix produced -- re-verified live against this
+change specifically (both the disambiguating case, several members with a
+Checking account, and the not-found case, a member with none) rather than
+assumed unaffected because it predates this entry being written.
+
+A second gap surfaced reviewing this fix itself: `matches_anchors(e, [])`
+is vacuously true for every element, so a descriptor carrying *only* a
+`CONTAINER_TEXT` anchor (no frame, heading, or label anchor at all) would
+have made "the structural area is present" true by construction regardless
+of whether anything was actually confirmed -- silently reintroducing the
+same wrong-widening this decision exists to prevent, just for a narrower
+input shape. Every descriptor this project's own recorder currently
+produces always carries at least a `FRAME` anchor, so no existing capability
+was actually exposed to it, but the resolver itself did not depend on that
+being true. Fixed by requiring at least one real structural anchor before
+treating it as confirmed; an empty structural-anchor list now falls back to
+the wide search, same as before this decision, rather than skipping it.
+
+**How it was found.** By testing the *previous* fix's edge case
+immediately, rather than treating "ambiguity now correctly refused" as the
+finish line -- a member with zero matching rows is the natural next case to
+check once "more than one matching row" has just been handled, and checking
+it caught a silent-wrong-answer bug before it ever reached the committed
+capability. The vacuous-anchor gap was found by an independent code review
+of this same fix, not by a failing test -- worth noting, since it is exactly
+the kind of edge case a hand-written test suite tends to skip when every
+real descriptor in the codebase happens to avoid it.

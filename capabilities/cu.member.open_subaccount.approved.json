@@ -53,19 +53,19 @@
       "name": "reference_number",
       "type": "string",
       "description": "Reference number as displayed by the application.",
-      "produced_by_step": "s10",
+      "produced_by_step": "s11",
       "sensitive": false
     }
   ],
   "steps": [
     {
       "id": "s1",
-      "intent": "Sign in before servicing functions become available.",
+      "intent": "Sign in is required before any servicing work; entering an operator ID.",
       "action": {
         "type": "type_text",
         "value": {
           "kind": "literal",
-          "literal": "svc01",
+          "literal": "operator",
           "param": null,
           "template": null
         },
@@ -92,9 +92,9 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 119.0,
-              "y": 102.15625,
-              "width": 145.0,
+              "x": 118.5999984741211,
+              "y": 102.80000305175781,
+              "width": 136.0,
               "height": 18.0
             }
           }
@@ -120,7 +120,67 @@
     },
     {
       "id": "s2",
-      "intent": "Sign in.",
+      "intent": "Fill password to sign in to the servicing system (demo accepts any credentials).",
+      "action": {
+        "type": "type_text",
+        "value": {
+          "kind": "literal",
+          "literal": "operator",
+          "param": null,
+          "template": null
+        },
+        "clear_first": true
+      },
+      "target": {
+        "role": "textbox",
+        "accessible_name": "Password",
+        "name_match": "normalized",
+        "name_source": "adjacent_label",
+        "anchors": [
+          {
+            "kind": "frame",
+            "value": "contentframe"
+          },
+          {
+            "kind": "heading",
+            "value": "Operator Sign On"
+          }
+        ],
+        "ordinal": null,
+        "fallbacks": [
+          {
+            "kind": "bbox",
+            "value": "",
+            "bbox": {
+              "x": 118.5999984741211,
+              "y": 126.80000305175781,
+              "width": 136.0,
+              "height": 18.0
+            }
+          }
+        ],
+        "robustness_note": "Field carries no accessible name of its own; identified by the adjacent label 'Password', which is how this application labels its inputs. Stable as long as the field keeps its caption. Anchored to contentframe > Operator Sign On to distinguish it from similarly named controls elsewhere on the page. Scoped to the content frame rather than navigation chrome.",
+        "recorded_confidence": 0.8
+      },
+      "wait": {
+        "settle_ms": 250,
+        "timeout_ms": 10000,
+        "await_navigation": false,
+        "until": null
+      },
+      "checkpoint": null,
+      "recovery_ids": [
+        "dismiss_system_notice",
+        "wait_out_transient_slowness",
+        "reauthenticate_after_timeout"
+      ],
+      "risk": "safe",
+      "min_confidence": 0.7,
+      "approved_risky": false
+    },
+    {
+      "id": "s3",
+      "intent": "Sign in to reach the servicing functions needed to open a sub-account.",
       "action": {
         "type": "click"
       },
@@ -145,9 +205,9 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 119.0,
-              "y": 181.15625,
-              "width": 62.1875,
+              "x": 118.5999984741211,
+              "y": 181.40000915527344,
+              "width": 61.38750076293945,
               "height": 20.0
             }
           }
@@ -162,7 +222,7 @@
         "until": null
       },
       "checkpoint": {
-        "id": "c2",
+        "id": "c3",
         "description": "Reached the 'Member Search' state.",
         "assertions": [
           {
@@ -191,8 +251,8 @@
       "approved_risky": false
     },
     {
-      "id": "s3",
-      "intent": "Look up the member the sub-account is being opened for.",
+      "id": "s4",
+      "intent": "Enter the member ID to locate the member record.",
       "action": {
         "type": "type_text",
         "value": {
@@ -224,9 +284,9 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 149.0,
-              "y": 120.15625,
-              "width": 121.0,
+              "x": 148.1999969482422,
+              "y": 121.5999984741211,
+              "width": 113.5999984741211,
               "height": 18.0
             }
           }
@@ -251,8 +311,8 @@
       "approved_risky": false
     },
     {
-      "id": "s4",
-      "intent": "Run the search.",
+      "id": "s5",
+      "intent": "Search for member {{param.member_id}} to open their record.",
       "action": {
         "type": "click"
       },
@@ -277,9 +337,9 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 287.0,
-              "y": 120.15625,
-              "width": 62.859375,
+              "x": 278.8000183105469,
+              "y": 121.5999984741211,
+              "width": 62.0625,
               "height": 20.0
             }
           }
@@ -294,7 +354,7 @@
         "until": null
       },
       "checkpoint": {
-        "id": "c4",
+        "id": "c5",
         "description": "Reached the 'Member Detail' state.",
         "assertions": [
           {
@@ -323,8 +383,8 @@
       "approved_risky": false
     },
     {
-      "id": "s5",
-      "intent": "Open the sub-account form from the member detail screen.",
+      "id": "s6",
+      "intent": "Open the sub-account creation form for member {{param.member_id}}.",
       "action": {
         "type": "click"
       },
@@ -350,9 +410,9 @@
             "value": "",
             "bbox": {
               "x": 8.0,
-              "y": 428.15625,
+              "y": 438.20001220703125,
               "width": 92.8125,
-              "height": 12.0
+              "height": 12.800000190734863
             }
           }
         ],
@@ -366,7 +426,7 @@
         "until": null
       },
       "checkpoint": {
-        "id": "c5",
+        "id": "c6",
         "description": "Reached the 'Open Sub-Account' state.",
         "assertions": [
           {
@@ -395,8 +455,8 @@
       "approved_risky": false
     },
     {
-      "id": "s6",
-      "intent": "Select the account type the caller asked for.",
+      "id": "s7",
+      "intent": "Select the declared account type for the new sub-account.",
       "action": {
         "type": "select_option",
         "value": {
@@ -427,10 +487,10 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 179.0,
-              "y": 150.15625,
-              "width": 97.0,
-              "height": 20.0
+              "x": 178.1999969482422,
+              "y": 153.1999969482422,
+              "width": 96.0,
+              "height": 19.600000381469727
             }
           }
         ],
@@ -454,8 +514,8 @@
       "approved_risky": false
     },
     {
-      "id": "s7",
-      "intent": "Name the account so it is identifiable on the member's profile.",
+      "id": "s8",
+      "intent": "Fill the account nickname required for the new sub-account.",
       "action": {
         "type": "type_text",
         "value": {
@@ -487,9 +547,9 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 179.0,
-              "y": 176.15625,
-              "width": 169.0,
+              "x": 178.1999969482422,
+              "y": 178.8000030517578,
+              "width": 158.40000915527344,
               "height": 18.0
             }
           }
@@ -514,8 +574,8 @@
       "approved_risky": false
     },
     {
-      "id": "s8",
-      "intent": "Fund the account with the opening deposit.",
+      "id": "s9",
+      "intent": "Enter the declared initial deposit amount for the new sub-account.",
       "action": {
         "type": "type_text",
         "value": {
@@ -547,9 +607,9 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 179.0,
-              "y": 200.15625,
-              "width": 97.0,
+              "x": 178.1999969482422,
+              "y": 202.8000030517578,
+              "width": 91.20000457763672,
               "height": 18.0
             }
           }
@@ -574,8 +634,8 @@
       "approved_risky": false
     },
     {
-      "id": "s9",
-      "intent": "Submit the form to open the sub-account and reach the confirmation screen.",
+      "id": "s10",
+      "intent": "Submit the completed sub-account form to open the savings account and get the confirmation reference.",
       "action": {
         "type": "click"
       },
@@ -600,9 +660,9 @@
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 20.0,
-              "y": 267.15625,
-              "width": 120.8125,
+              "x": 19.600000381469727,
+              "y": 269.8000183105469,
+              "width": 120.01250457763672,
               "height": 20.0
             }
           }
@@ -617,7 +677,7 @@
         "until": null
       },
       "checkpoint": {
-        "id": "c9",
+        "id": "c10",
         "description": "Reached the 'Sub-Account Opened' state.",
         "assertions": [
           {
@@ -646,8 +706,8 @@
       "approved_risky": true
     },
     {
-      "id": "s10",
-      "intent": "The confirmation screen carries the reference number the caller needs.",
+      "id": "s11",
+      "intent": "The confirmation screen shows the reference number that is the declared output.",
       "action": {
         "type": "extract",
         "output": "reference_number",
@@ -674,17 +734,17 @@
         "fallbacks": [
           {
             "kind": "text",
-            "value": "Reference NumberSA-191944",
+            "value": "Reference NumberSA-198195",
             "bbox": null
           },
           {
             "kind": "bbox",
             "value": "",
             "bbox": {
-              "x": 186.0,
-              "y": 155.15625,
-              "width": 120.46875,
-              "height": 18.0
+              "x": 185.1999969482422,
+              "y": 157.40000915527344,
+              "width": 120.4749984741211,
+              "height": 18.80000114440918
             }
           }
         ],
@@ -818,17 +878,17 @@
   "risk": {
     "contains_irreversible": true,
     "irreversible_step_ids": [
-      "s9"
+      "s10"
     ],
     "notes": "Reviewed: the sub-account submit is approved for unattended replay."
   },
   "provenance": {
-    "discovery_run_id": "discovery-20260823-050749-7ef011",
-    "provider": "scripted",
-    "model": "scripted-0",
-    "recorded_at": "2026-08-23T05:07:53.545689Z",
-    "steps_explored": 10,
-    "human_assisted": false,
+    "discovery_run_id": "discovery-20260825-054828-d48e92",
+    "provider": "anthropic",
+    "model": "claude-opus-5",
+    "recorded_at": "2026-08-25T05:49:19.288004Z",
+    "steps_explored": 11,
+    "human_assisted": true,
     "human_action_count": 1
   },
   "approval": "approved"

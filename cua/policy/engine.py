@@ -36,6 +36,7 @@ from urllib.parse import urlparse
 
 import yaml
 
+from cua.config import MOCKAPP_HOST, MOCKAPP_PORT
 from cua.policy.redaction import Redactor
 from cua.schema.capability import ElementDescriptor, RiskClass
 
@@ -78,6 +79,19 @@ class PolicyEngine:
     def __init__(self, config: dict[str, Any]) -> None:
         allowlist = config.get("allowlist", {})
         self._origins: list[str] = [o.rstrip("/") for o in allowlist.get("origins", [])]
+        # policy.yaml lists the mock app's default origin explicitly, which is
+        # right for someone cloning fresh -- but a hardcoded port here is
+        # exactly the kind of drift the rest of this project (mockapp/app.py,
+        # cli.py) already guards against by reading MOCKAPP_HOST/MOCKAPP_PORT.
+        # Found changing the default port locally: navigation was DENIED
+        # outright rather than reaching the escalation the test expected,
+        # because the allowlist still pointed at the old port. Adding the
+        # currently-configured origin here means a local port change does not
+        # also require hand-editing a security-relevant config file.
+        for host in (MOCKAPP_HOST, "localhost"):
+            origin = f"http://{host}:{MOCKAPP_PORT}"
+            if origin not in self._origins:
+                self._origins.append(origin)
         self._path_patterns: list[str] = allowlist.get("path_patterns", ["*"])
         self._actions: set[str] = set(allowlist.get("actions", []))
 

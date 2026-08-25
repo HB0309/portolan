@@ -10,12 +10,14 @@ from __future__ import annotations
 
 import asyncio
 import json
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
 import typer
-from dotenv import load_dotenv
 
+from cua.config import CONSOLE_PORT as _DEFAULT_CONSOLE_PORT, MOCKAPP_TARGET as _DEFAULT_TARGET
 from cua.discovery import CapabilityRecorder, DiscoveryOrchestrator, InterventionOutcome, new_run_id
 from cua.escalation.broker import EscalationBroker
 from cua.escalation.models import InterventionRequest, OperatorDecision, ResumeMode
@@ -27,7 +29,19 @@ from cua.schema.overlay import TenantOverlay, resolve as resolve_overlay
 from cua.session import SessionManager
 from cua.surfaces.web import WebSurface
 
-load_dotenv()
+# The target application is real, uncontrolled UI text -- a legacy app's own
+# window chrome ("X<square><underscore>") is exactly the kind of thing that
+# ends up quoted back in a failure report. Found live: reporting a captured
+# 500-error page's text crashed the whole CLI with UnicodeEncodeError, because
+# Windows' console defaults to a codepage (cp1252) that cannot represent most
+# of Unicode, and typer.echo() does not fall back -- a result the run itself
+# produced correctly then became a crash on the last line meant to report it.
+# Reconfiguring stdout/stderr once, here, rather than encoding-guarding every
+# individual echo call, is what makes any future line of arbitrary captured
+# text safe to print instead of only the ones this specific crash was found in.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
 
 app = typer.Typer(add_completion=False, help=__doc__)
 
@@ -45,6 +59,60 @@ def _parse_json(raw: str | None, what: str) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise typer.BadParameter(f"{what} must be a JSON object")
     return value
+
+
+def _auto_approve_responder(request: InterventionRequest) -> OperatorDecision:
+    """Stands in for an operator so the flow can be shown end to end.
+
+    Never appropriate against a real institution -- both discover and replay
+    built this same closure independently; one place means the note text
+    can't drift between the two.
+    """
+    return OperatorDecision(mode=ResumeMode.APPROVE, note="auto-approved (unattended demo)")
+
+
+def _auto_commit_capability(
+    path: Path, capability_id: str, run_id: str, provider: str, model: str, steps: int
+) -> None:
+    """Commit a successfully recorded capability on its own, right away.
+
+    A discovery run used to leave its result sitting as an uncommitted
+    working-tree change -- easy to lose track of, easy to overwrite with the
+    next run before anyone looked at it, and one more thing to remember to
+    stage. This never touches anything but the one capability file this run
+    just produced; evidence and everything else stay exactly as uncommitted
+    as before, since only the capability is the thing worth a checkpoint.
+
+    Best-effort: not being in a git repo, git not being on PATH, or nothing
+    actually changing (a rerun that reproduces byte-identical output) are all
+    reported, not raised -- a discovery run that succeeded should not fail
+    the whole command over a commit.
+    """
+    try:
+        subprocess.run(
+            ["git", "add", "--", str(path)], check=True, capture_output=True, text=True
+        )
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet", "--", str(path)], capture_output=True
+        )
+        if staged.returncode == 0:
+            return  # nothing changed -- a rerun that reproduced the same recording
+        subprocess.run(
+            [
+                "git",
+                "commit",
+                "-m",
+                f"Record {capability_id} from a live discovery run\n\n"
+                f"run {run_id}, {provider}/{model}, {steps} steps",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        typer.echo(f"  committed: {path}")
+    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+        detail = exc.stderr if isinstance(exc, subprocess.CalledProcessError) else str(exc)
+        typer.echo(f"  (not committed automatically: {detail})")
 
 
 def _load_capability(path: Path) -> Capability:
@@ -88,7 +156,7 @@ def _echo_result(result: Any) -> None:
 @app.command()
 def discover(
     goal: str = typer.Option(..., help="What to accomplish, in plain language."),
-    target: str = typer.Option("http://127.0.0.1:8080/", help="Entry point URL."),
+    target: str = typer.Option(_DEFAULT_TARGET, help="Entry point URL."),
     inputs: str = typer.Option("{}", help='JSON object of declared inputs.'),
     outputs: str = typer.Option("", help="Comma-separated names of values to collect."),
     capability_id: str = typer.Option(..., help="Dotted id to save the capability under."),
@@ -113,7 +181,9 @@ def discover(
             "a real institution."
         ),
     ),
-    console_port: int = typer.Option(8081, help="Port for the operator console."),
+    console_port: int = typer.Option(
+        _DEFAULT_CONSOLE_PORT, help="Port for the operator console."
+    ),
 ) -> None:
     """Run the agent on a goal and record the successful flow as a capability."""
     input_map = {k: str(v) for k, v in _parse_json(inputs, "--inputs").items()}
@@ -144,14 +214,7 @@ def discover(
         evidence = EvidenceRecorder(run_id, root=EVIDENCE_DIR, redactor=policy.redactor)
         surface = await WebSurface.launch(headless=headless)
         session = SessionManager(surface=surface, evidence=evidence)
-        responder = None
-        if auto_approve:
-
-            def responder(request: InterventionRequest) -> OperatorDecision:
-                return OperatorDecision(
-                    mode=ResumeMode.APPROVE, note="auto-approved (unattended demo)"
-                )
-
+        responder = _auto_approve_responder if auto_approve else None
         broker = EscalationBroker(
             session, evidence, run_id=run_id, auto_responder=responder, attended=attended
         )
@@ -210,6 +273,9 @@ def discover(
             path = CAPABILITY_DIR / f"{capability_id}.json"
             path.write_text(capability.model_dump_json(indent=2), encoding="utf-8")
             evidence.write_json("capability.json", capability)
+            _auto_commit_capability(
+                path, capability_id, run_id, llm.name, llm.model, len(capability.steps)
+            )
 
             # Record what the run produced, so the evidence directory says which
             # artifact came out of it rather than leaving that to the filename.
@@ -256,7 +322,9 @@ def replay(
         False, help="Unattended demo: approve interventions automatically."
     ),
     headless: bool = typer.Option(False, help="Run without a visible browser window."),
-    console_port: int = typer.Option(8081, help="Port for the operator console."),
+    console_port: int = typer.Option(
+        _DEFAULT_CONSOLE_PORT, help="Port for the operator console."
+    ),
 ) -> None:
     """Execute a recorded capability deterministically. No model is consulted."""
     cap = _load_capability(capability)
@@ -279,14 +347,7 @@ def replay(
         surface = await WebSurface.launch(headless=headless)
         session = SessionManager(surface=surface, evidence=evidence)
 
-        responder = None
-        if auto_approve:
-
-            def responder(request: InterventionRequest) -> OperatorDecision:
-                return OperatorDecision(
-                    mode=ResumeMode.APPROVE, note="auto-approved (unattended demo)"
-                )
-
+        responder = _auto_approve_responder if auto_approve else None
         broker = EscalationBroker(
             session, evidence, run_id=run_id, auto_responder=responder, attended=attended
         )
@@ -386,7 +447,7 @@ def invoke(
         attended=False,
         auto_approve=False,
         headless=headless,
-        console_port=8081,
+        console_port=_DEFAULT_CONSOLE_PORT,
     )
 
 

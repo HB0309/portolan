@@ -155,6 +155,9 @@ class DiscoveryOrchestrator:
         consecutive_failures = 0
         limits = self.policy.limits
         deadline = started + limits.wall_clock_seconds
+        # Static for the whole run -- rebuilding this nested structure on every
+        # step (up to max_steps times) recomputed the same nothing each time.
+        tools = tool_definitions()
 
         for step_index in range(1, limits.max_steps + 1):
             if time.monotonic() > deadline + self._human_wait_seconds:
@@ -181,7 +184,7 @@ class DiscoveryOrchestrator:
 
             try:
                 response = await self.provider.decide(
-                    SYSTEM_PROMPT, [Message(role="user", content=prompt)], tool_definitions()
+                    SYSTEM_PROMPT, [Message(role="user", content=prompt)], tools
                 )
             except LLMError as exc:
                 return self._failed(

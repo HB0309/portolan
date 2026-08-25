@@ -119,6 +119,3 @@ class EvidenceRecorder:
             return ""
         self.refs.append(EvidenceRef(kind="dom_snapshot", path=str(path), note=label))
         return str(path)
-
-    def note_ref(self, kind: str, path: str, note: str = "") -> None:
-        self.refs.append(EvidenceRef(kind=kind, path=path, note=note))  # type: ignore[arg-type]
