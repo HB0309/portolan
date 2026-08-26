@@ -27,3 +27,12 @@ MOCKAPP_HOST = os.environ.get("MOCKAPP_HOST", "127.0.0.1")
 MOCKAPP_PORT = os.environ.get("MOCKAPP_PORT", "8080")
 MOCKAPP_TARGET = f"http://{MOCKAPP_HOST}:{MOCKAPP_PORT}/"
 CONSOLE_PORT = int(os.environ.get("CONSOLE_PORT", "8081"))
+
+#: Which LLM provider drives discovery when --provider isn't passed explicitly.
+#: Documented in .env.example as the way to run against a single vendor --
+#: e.g. someone with only an OpenAI key sets CUA_PROVIDER=openai once instead
+#: of passing --provider openai on every discover/ask invocation. Previously
+#: only documented, never read: every CLI default was hardcoded to
+#: "anthropic" regardless of this variable, so the documented instruction
+#: silently did nothing.
+DEFAULT_PROVIDER = os.environ.get("CUA_PROVIDER", "anthropic")

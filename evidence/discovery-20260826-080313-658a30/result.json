@@ -1,0 +1,89 @@
+{
+  "succeeded": true,
+  "run_id": "discovery-[REDACTED]-658a30",
+  "goal": "Open a savings sub-account for member [REDACTED] with an initial deposit of 500 and nickname '[REDACTED]', then return the confirmation reference number",
+  "provider": "anthropic",
+  "model": "claude-opus-5",
+  "steps_taken": 10,
+  "provider_calls": 11,
+  "input_tokens": 22500,
+  "output_tokens": 1331,
+  "capability_path": "capabilities\\cu.member.open_subaccount.json",
+  "capability_id": "cu.member.open_subaccount",
+  "failure": null,
+  "escalations": [],
+  "evidence": [
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-658a30\\steps\\01-before.png",
+      "note": "01-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-658a30\\steps\\02-before.png",
+      "note": "02-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-658a30\\steps\\03-before.png",
+      "note": "03-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-658a30\\steps\\04-before.png",
+      "note": "04-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-658a30\\steps\\05-before.png",
+      "note": "05-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-658a30\\steps\\06-before.png",
+      "note": "06-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-658a30\\steps\\07-before.png",
+      "note": "07-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-658a30\\steps\\08-before.png",
+      "note": "08-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-658a30\\steps\\09-before.png",
+      "note": "09-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-658a30\\steps\\intervention-1.png",
+      "note": "intervention-1"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-658a30\\steps\\iv-04729e26-control-taken.png",
+      "note": "iv-04729e26-control-taken"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-658a30\\steps\\10-before.png",
+      "note": "10-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-658a30\\steps\\11-before.png",
+      "note": "11-before"
+    },
+    {
+      "kind": "screenshot",
+      "path": "evidence\\discovery-[REDACTED]-658a30\\steps\\final.png",
+      "note": "final"
+    }
+  ],
+  "started_at": "2026-08-26T08:04:03.700187Z",
+  "duration_ms": 48704
+}

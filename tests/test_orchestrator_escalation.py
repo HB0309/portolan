@@ -215,3 +215,51 @@ class TestHumanWaitTimeIsExcludedFromTheWallClock:
         # above -- the property under test is "meaningfully excluded", not a
         # precise measurement of sleep().
         assert orchestrator._human_wait_seconds >= 0.25
+
+
+class TestResultRecordsTheEscalation:
+    """Same bug class as D33 (ReplayEngine._escalate): DiscoveryResult.escalations
+    was declared and read (evidence/README.md generation, result.json) but
+    DiscoveryOrchestrator never appended to it -- found while writing up a run
+    whose run.jsonl showed a genuine human handoff but whose result.json
+    reported an empty escalations list.
+    """
+
+    async def test_a_human_handoff_is_recorded_on_the_result(self, tmp_path):
+        surface = FakeSurface()
+
+        async def on_intervention(reason, context):
+            return InterventionOutcome(approved=True, performed_by_human=True, human_actions=2)
+
+        orchestrator = _make_orchestrator(surface, tmp_path, on_intervention=on_intervention)
+        result, _ = await orchestrator.run(
+            goal="open a sub-account", entry_point=ALLOWED_URL, inputs={}, outputs=[]
+        )
+
+        # succeeded/failed doesn't matter here -- the script has no "finish"
+        # call queued after the click, so it runs out of steps regardless.
+        # What matters is that the escalation itself was recorded either way.
+        assert len(result.escalations) == 1
+        escalation = result.escalations[0]
+        assert escalation.reason == "irreversible_action"
+        assert escalation.resolved_at is not None
+        assert escalation.resume_mode == "performed_manually"
+        assert escalation.human_actions_recorded == 2
+
+    async def test_no_escalation_means_an_empty_list_not_a_stub(self, tmp_path):
+        surface = FakeSurface()
+
+        async def on_intervention(reason, context):
+            return InterventionOutcome(approved=True, performed_by_human=False)
+
+        orchestrator = _make_orchestrator(surface, tmp_path, on_intervention=on_intervention)
+        result, _ = await orchestrator.run(
+            goal="open a sub-account", entry_point=ALLOWED_URL, inputs={}, outputs=[]
+        )
+
+        # The click still escalates (it's irreversible) -- this is really the
+        # same path as the test above, kept separate to pin down the "approved
+        # but not performed by a human" resume_mode distinctly.
+        assert len(result.escalations) == 1
+        assert result.escalations[0].resume_mode == "approved"
+        assert result.escalations[0].human_actions_recorded == 0

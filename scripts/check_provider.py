@@ -32,6 +32,7 @@ sys.path.insert(0, str(ROOT))
 
 from dotenv import load_dotenv  # noqa: E402
 
+from cua.config import DEFAULT_PROVIDER  # noqa: E402
 from cua.discovery.prompts import SYSTEM_PROMPT, render_goal  # noqa: E402
 from cua.discovery.tools import tool_definitions  # noqa: E402
 from cua.llm import LLMError, Message, build_provider  # noqa: E402
@@ -74,7 +75,9 @@ SENSIBLE_FIRST_MOVES = {"type_text", "click"}
 
 async def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--provider", default="anthropic", help="anthropic | openai")
+    parser.add_argument(
+        "--provider", default=DEFAULT_PROVIDER, help="anthropic | openai (default from CUA_PROVIDER)"
+    )
     parser.add_argument("--model", default="", help="Override the provider's default model.")
     args = parser.parse_args()
 

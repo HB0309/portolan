@@ -1,0 +1,25 @@
+{
+  "id": "iv-04729e26",
+  "run_id": "discovery-[REDACTED]-658a30",
+  "reason": "irreversible_action",
+  "capability": null,
+  "goal": null,
+  "step_id": "9",
+  "step_intent": null,
+  "expected": "click",
+  "observed": "irreversible action during discovery (button named 'Open Sub-Account' matches the irreversible pattern 'open sub-account'); a human decides whether to commit it",
+  "url": "http://127.0.0.1:9090/",
+  "screenshot": "evidence\\discovery-[REDACTED]-658a30\\steps\\iv-04729e26-control-taken.png",
+  "resume_options": [
+    "approve",
+    "performed_manually",
+    "skip_step",
+    "abort"
+  ],
+  "status": "resolved",
+  "raised_at": "2026-08-26T08:03:41.963183Z",
+  "resolved_at": "2026-08-26T08:03:57.328336Z",
+  "resolution": "performed_manually",
+  "operator_note": "resolved from the console",
+  "human_actions": 2
+}

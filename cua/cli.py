@@ -17,7 +17,11 @@ from typing import Any
 
 import typer
 
-from cua.config import CONSOLE_PORT as _DEFAULT_CONSOLE_PORT, MOCKAPP_TARGET as _DEFAULT_TARGET
+from cua.config import (
+    CONSOLE_PORT as _DEFAULT_CONSOLE_PORT,
+    DEFAULT_PROVIDER as _DEFAULT_PROVIDER,
+    MOCKAPP_TARGET as _DEFAULT_TARGET,
+)
 from cua.discovery import CapabilityRecorder, DiscoveryOrchestrator, InterventionOutcome, new_run_id
 from cua.escalation.broker import EscalationBroker
 from cua.escalation.models import InterventionRequest, OperatorDecision, ResumeMode
@@ -83,6 +87,16 @@ def _auto_commit_capability(
     just produced; evidence and everything else stay exactly as uncommitted
     as before, since only the capability is the thing worth a checkpoint.
 
+    That claim used to be false in practice: `git commit` with no pathspec
+    commits everything currently staged, not just what was just `git add`ed.
+    Found live, doing unrelated cleanup with `git rm` in the same working
+    tree between two discovery runs -- the next run's auto-commit swept up
+    those staged deletions too, under a commit message that only mentioned
+    the capability. The content was still correct, but the message no
+    longer described what the commit actually contained. `git commit --
+    <path>` scopes the commit to exactly that path regardless of what else
+    is staged, which is what the docstring already claimed this did.
+
     Best-effort: not being in a git repo, git not being on PATH, or nothing
     actually changing (a rerun that reproduces byte-identical output) are all
     reported, not raised -- a discovery run that succeeded should not fail
@@ -104,6 +118,8 @@ def _auto_commit_capability(
                 "-m",
                 f"Record {capability_id} from a live discovery run\n\n"
                 f"run {run_id}, {provider}/{model}, {steps} steps",
+                "--",
+                str(path),
             ],
             check=True,
             capture_output=True,
@@ -162,7 +178,9 @@ def discover(
     capability_id: str = typer.Option(..., help="Dotted id to save the capability under."),
     name: str = typer.Option("", help="Human-readable capability name."),
     description: str = typer.Option("", help="Description written for a calling agent."),
-    provider: str = typer.Option("anthropic", help="anthropic | openai | scripted"),
+    provider: str = typer.Option(
+        _DEFAULT_PROVIDER, help="anthropic | openai | scripted (default from CUA_PROVIDER)"
+    ),
     model: str = typer.Option("", help="Override the provider's default model."),
     script: str = typer.Option(
         "", help="With --provider scripted: which built-in script to run."
@@ -236,6 +254,7 @@ def discover(
             return InterventionOutcome(
                 approved=decision.mode in {ResumeMode.APPROVE, ResumeMode.PERFORMED_MANUALLY},
                 performed_by_human=decision.mode is ResumeMode.PERFORMED_MANUALLY,
+                human_actions=int(decision.extra.get("human_actions", 0)),
             )
 
         server = None
@@ -293,8 +312,9 @@ def discover(
             typer.echo(f"  tokens: {result.input_tokens} in / {result.output_tokens} out")
             if trace.collected:
                 # Terminal-only, for whoever just watched the run: the
-                # capability itself never gets this, by design (Hard Rule #6 --
-                # caller data is never a literal in the artifact). Printing it
+                # capability itself never gets this, by design (see
+                # CONVENTIONS.md: artifacts never store caller data as
+                # literals). Printing it
                 # here is the only place a value collected during discovery is
                 # visible at all; otherwise it is captured, used to prove the
                 # run succeeded, and then discarded when the process exits.

@@ -1073,12 +1073,17 @@ drift to be argued past. Splitting the fallback on anchor kind is what lets
 while "the row doesn't exist" gets an honest `NOT_FOUND` instead of a wrong
 answer dressed as a right one.
 
-**Cost.** None found. One existing capability
-(`cu.member.read_checking_balance`) does use a `CONTAINER_TEXT` anchor,
-being exactly the one D35's fix produced -- re-verified live against this
-change specifically (both the disambiguating case, several members with a
-Checking account, and the not-found case, a member with none) rather than
-assumed unaffected because it predates this entry being written.
+**Cost.** None found. One capability recorded at the time
+(`cu.member.read_checking_balance`) used a `CONTAINER_TEXT` anchor, being
+exactly the one D35's fix produced -- re-verified live against this change
+specifically (both the disambiguating case, several members with a Checking
+account, and the not-found case, a member with none) rather than assumed
+unaffected because it predates this entry being written. That capability was
+later dropped during the pre-push trim (it duplicated
+`open_subaccount`/`read_savings_balance`'s coverage of the same code path
+without adding a distinct scenario), so it is not among the capabilities
+shipped here -- the anchor and resolver logic it exercised remain, covered
+instead by `tests/test_resolver.py::TestContainerTextDoesNotWidenOnItsOwnAbsence`.
 
 A second gap surfaced reviewing this fix itself: `matches_anchors(e, [])`
 is vacuously true for every element, so a descriptor carrying *only* a
@@ -1102,3 +1107,38 @@ capability. The vacuous-anchor gap was found by an independent code review
 of this same fix, not by a failing test -- worth noting, since it is exactly
 the kind of edge case a hand-written test suite tends to skip when every
 real descriptor in the codebase happens to avoid it.
+
+## D37 — DiscoveryResult.escalations was declared and never filled in
+
+**Decision.** `DiscoveryOrchestrator._raise_intervention()` (`discovery/
+orchestrator.py`) now builds an `EscalationTrace` at the moment it raises,
+appends it to `self._escalations`, and updates it with the outcome once the
+intervention resolves. Both `DiscoveryResult` construction sites (the
+success path and `_failed()`) now pass `escalations=list(self._escalations)`.
+`InterventionOutcome` gained a `human_actions: int` field so the real count
+from the operator console reaches the trace, instead of a hand-picked 0/1.
+
+**Why.** The exact same bug class as D32's `ReplayEngine._escalations` fix,
+just on the discovery side: the field existed on the schema
+(`DiscoveryResult.escalations`) and was read by evidence tooling, but nothing
+on the discovery path ever appended to it, so it was silently always `[]`
+regardless of how many real human handoffs a run went through. Found while
+writing an accurate `evidence/README.md` entry for the official
+`open_subaccount` recording -- its `result.json` reported `"escalations": []`
+even though that exact run's `run.jsonl` shows a genuine
+`escalation.raised` / `control.granted owner=human` / `escalation.resolved`
+sequence with `human_actions: 2`. D32's own review pass fixed this for
+replay and explicitly did not claim to have checked discovery for the same
+shape, which is exactly why it went unnoticed for as long as it did.
+
+**Cost.** None found; full suite (140 tests, up from 138) passes. Two new
+tests (`tests/test_orchestrator_escalation.py::TestResultRecordsTheEscalation`)
+assert the trace is populated with the right `reason`, `resume_mode`, and
+`human_actions_recorded` for both the "human performed it" and "human
+approved, automation acted" resume shapes, following the same fake-surface
+harness the double-execution regression tests in that file already use.
+
+**How it was found.** Writing documentation that has to be true, not by a
+failing test -- the mismatch between a real run's own event log and its own
+typed result surfaced the gap the moment the two were compared side by side
+for the README entry.

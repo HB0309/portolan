@@ -14,8 +14,9 @@ up being a chat log that cannot be replayed.
 |---|---|---|---|
 | `discovery-20260823-050746-b2ef0a` | discovery | **succeeded** | recorded `cu.member.read_savings_balance` in 5 steps |
 | `discovery-20260823-050749-7ef011` | discovery | **succeeded** | recorded `cu.member.open_subaccount` in 10 steps |
-| `discovery-20260824-080430-631888` | discovery | **failed** | stopped: openai call failed: Error code: 429 - {'error': {'message': 'Rate limit reached for model  |
-| `discovery-20260824-081238-3217a7` | discovery | **succeeded** | recorded `cu.member.read_savings_balance` in 6 steps |
+| `discovery-20260824-080430-631888` | discovery | **failed** | **real model** (`openai`/`openai/gpt-oss-120b`), no script: stopped: openai call failed: Error code: 429 - {'error': {'message': 'Rate limit reached for model  |
+| `discovery-20260824-081238-3217a7` | discovery | **succeeded** | **real model** (`openai`/`openai/gpt-oss-120b`), no script: recorded `cu.member.read_savings_balance` in 6 steps |
+| `discovery-20260826-080313-658a30` | discovery | **succeeded** | **real model** (`anthropic`/`claude-opus-5`), no script: recorded `cu.member.open_subaccount` in 10 steps |
 | `replay-20260823-050753-672eb3` | replay | **success** | outputs `{'savings_balance': '$4,102.55'}` |
 | `replay-20260823-050757-16681e` | replay | **success** | outputs `{'savings_balance': '$22,981.73'}` |
 | `replay-20260823-050801-6c955e` | replay | **business_outcome** | `MEMBER_NOT_FOUND` |
@@ -33,12 +34,12 @@ up being a chat log that cannot be replayed.
 | `replay-20260824-081410-75d157` | replay | **success** | outputs `{'savings_balance': '$4,102.55'}` |
 | `replay-20260824-081415-8e4038` | replay | **success** | outputs `{'savings_balance': '$22,981.73'}` |
 
-## Note on the discovery runs here
+## Note on the scripted discovery runs here
 
-> These were produced by the **scripted provider**, which replays a fixed flow
-> through the identical loop, policy gate and recorder. It demonstrates the
-> plumbing, not the agent's judgment. A genuine model-driven discovery run is
-> still outstanding.
+> The runs not marked **real model** above were produced by the **scripted
+> provider**, which drives the identical loop, policy gate, and recorder
+> through a fixed script -- useful for testing the plumbing without spending
+> a model call, but not what produced the real-model entries.
 
 ## Reading a failure
 

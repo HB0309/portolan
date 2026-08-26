@@ -42,7 +42,16 @@ without an overlay a step degrades to rung 5 one step *before* the run breaks
 outright, which is the point at which it would have been worth reviewing.
 """
 
-SCRIPTED_NOTE = """
+SCRIPTED_NOTE_WITH_REAL_RUNS = """
+## Note on the scripted discovery runs here
+
+> The runs not marked **real model** above were produced by the **scripted
+> provider**, which drives the identical loop, policy gate, and recorder
+> through a fixed script -- useful for testing the plumbing without spending
+> a model call, but not what produced the real-model entries.
+"""
+
+SCRIPTED_NOTE_NO_REAL_RUNS = """
 ## Note on the discovery runs here
 
 > These were produced by the **scripted provider**, which replays a fixed flow
@@ -55,14 +64,16 @@ SCRIPTED_NOTE = """
 def describe(payload: dict, name: str) -> tuple[str, str, str]:
     if name.startswith("discovery"):
         status = "succeeded" if payload.get("succeeded") else "failed"
+        real_model = payload.get("provider") not in (None, "scripted")
+        prefix = f"**real model** (`{payload.get('provider')}`/`{payload.get('model')}`), no script: " if real_model else ""
         if payload.get("succeeded"):
             detail = (
-                f"recorded `{payload.get('capability_id')}` in "
+                f"{prefix}recorded `{payload.get('capability_id')}` in "
                 f"{payload.get('steps_taken')} steps"
             )
         else:
             failure = payload.get("failure") or {}
-            detail = f"stopped: {failure.get('message', '')[:90]}"
+            detail = f"{prefix}stopped: {failure.get('message', '')[:90]}"
         return "discovery", status, detail
 
     status = payload["status"]
@@ -90,19 +101,25 @@ def describe(payload: dict, name: str) -> tuple[str, str, str]:
 def main() -> None:
     rows = []
     scripted = False
+    real = False
     for directory in sorted(EVIDENCE.iterdir()):
         result = directory / "result.json"
         if not result.is_file():
             continue
         payload = json.loads(result.read_text(encoding="utf-8"))
         kind, status, detail = describe(payload, directory.name)
-        if kind == "discovery" and payload.get("provider") == "scripted":
-            scripted = True
+        if kind == "discovery":
+            if payload.get("provider") == "scripted":
+                scripted = True
+            else:
+                real = True
         rows.append(f"| `{directory.name}` | {kind} | **{status}** | {detail} |")
 
     body = HEADER + "\n".join(rows) + "\n"
-    if scripted:
-        body += SCRIPTED_NOTE
+    if scripted and real:
+        body += SCRIPTED_NOTE_WITH_REAL_RUNS
+    elif scripted:
+        body += SCRIPTED_NOTE_NO_REAL_RUNS
     body += FOOTER
 
     (EVIDENCE / "README.md").write_text(body, encoding="utf-8")

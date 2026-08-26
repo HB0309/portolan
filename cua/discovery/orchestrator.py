@@ -32,7 +32,12 @@ from cua.evidence.recorder import EvidenceRecorder
 from cua.llm.base import LLMError, LLMProvider, Message
 from cua.policy.engine import Disposition, Mode, PolicyEngine
 from cua.schema.capability import ElementDescriptor
-from cua.schema.results import DiscoveryResult, FailureCategory, FailureReport
+from cua.schema.results import (
+    DiscoveryResult,
+    EscalationTrace,
+    FailureCategory,
+    FailureReport,
+)
 from cua.surfaces.base import ActionRequest, Element, Observation, Surface, SurfaceError
 
 @dataclass
@@ -51,6 +56,7 @@ class InterventionOutcome:
 
     approved: bool
     performed_by_human: bool = False
+    human_actions: int = 0
 
 
 #: Signature of the human-escalation hook.
@@ -109,6 +115,7 @@ class DiscoveryOrchestrator:
         #: the run. Excluded from the wall-clock budget below -- see
         #: _raise_intervention for why.
         self._human_wait_seconds = 0.0
+        self._escalations: list[EscalationTrace] = []
 
     async def run(
         self,
@@ -302,6 +309,7 @@ class DiscoveryOrchestrator:
                 input_tokens=self.input_tokens,
                 output_tokens=self.output_tokens,
                 evidence=list(self.evidence.refs),
+                escalations=list(self._escalations),
                 duration_ms=int((time.monotonic() - started) * 1000),
             ),
             trace,
@@ -464,7 +472,24 @@ class DiscoveryOrchestrator:
         self, reason: str, context: dict[str, Any]
     ) -> InterventionOutcome:
         self.evidence.log("escalation.raised", reason=reason, context=context)
+        # Same bug class as D33 (ReplayEngine._escalate): this is the only
+        # place discovery ever raises an escalation, so it is also the one
+        # place responsible for recording it in DiscoveryResult.escalations.
+        # That field was declared and read (evidence/README.md generation,
+        # result.json) but nothing ever appended to it, found while writing
+        # up a run whose run.jsonl showed a genuine human handoff but whose
+        # result.json reported an empty escalations list.
+        step = context.get("step")
+        trace = EscalationTrace(
+            intervention_id=f"esc-{len(self._escalations) + 1}",
+            step_id=str(step) if step is not None else None,
+            reason=reason,
+            raised_at=datetime.now(timezone.utc),
+        )
+        self._escalations.append(trace)
         if self.on_intervention is None:
+            trace.resolved_at = datetime.now(timezone.utc)
+            trace.resume_mode = "abort"
             return InterventionOutcome(approved=False)
         # The wall-clock budget below exists to catch automation that loops
         # without making progress. A human deciding whether to approve an
@@ -479,6 +504,11 @@ class DiscoveryOrchestrator:
         waited_from = time.monotonic()
         outcome = await self.on_intervention(reason, context)
         self._human_wait_seconds += time.monotonic() - waited_from
+        trace.resolved_at = datetime.now(timezone.utc)
+        trace.resume_mode = "performed_manually" if outcome.performed_by_human else (
+            "approved" if outcome.approved else "abort"
+        )
+        trace.human_actions_recorded = outcome.human_actions
         self.evidence.log(
             "escalation.resolved",
             reason=reason,
@@ -509,6 +539,7 @@ class DiscoveryOrchestrator:
                 output_tokens=self.output_tokens,
                 failure=FailureReport(category=category, message=message),
                 evidence=list(self.evidence.refs),
+                escalations=list(self._escalations),
                 started_at=datetime.now(timezone.utc),
                 duration_ms=int((time.monotonic() - started) * 1000),
             ),

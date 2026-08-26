@@ -300,6 +300,16 @@ Demonstrated: a draft capability refuses its irreversible step unattended and
 reports why; the reviewed and approved version completes and returns its
 confirmation reference.
 
+Practically, this means every capability ships in `draft` by default, and stays
+there until a human deliberately reviews and approves it. Until that happens,
+every single invocation that reaches the irreversible step — regardless of how
+many times it has run successfully before — stops and waits for a person to be
+at the console and act, live, in the browser. There is no unattended path around
+that gate, and no amount of successful prior runs substitutes for the one-time
+review: repetition builds no trust the system acts on by itself. Approval is a
+deliberate, recorded decision on that specific capability version, not a
+threshold anything crosses automatically.
+
 **Data handling.** Two layers, and the order matters. Structurally, sensitive
 values are parameters and parameters are recorded as references, so nothing
 sensitive is written down in the first place — that is the control that actually

@@ -39,6 +39,7 @@ sys.path.insert(0, str(ROOT))
 from dotenv import load_dotenv  # noqa: E402
 
 from cua.catalog import CapabilityCatalog  # noqa: E402
+from cua.config import DEFAULT_PROVIDER  # noqa: E402
 from cua.discovery import new_run_id  # noqa: E402
 from cua.evidence import EvidenceRecorder  # noqa: E402
 from cua.llm import LLMError, Message, build_provider  # noqa: E402
@@ -96,7 +97,9 @@ async def execute(capability, arguments: dict, headless: bool) -> dict:
 async def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("request", help="What you want, in plain language.")
-    parser.add_argument("--provider", default="anthropic", help="anthropic | openai")
+    parser.add_argument(
+        "--provider", default=DEFAULT_PROVIDER, help="anthropic | openai (default from CUA_PROVIDER)"
+    )
     parser.add_argument("--model", default="")
     parser.add_argument("--headless", action="store_true")
     args = parser.parse_args()

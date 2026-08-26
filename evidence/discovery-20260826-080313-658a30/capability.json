@@ -18,7 +18,7 @@
       "required": true,
       "sensitive": false,
       "enum_values": null,
-      "example": "10042"
+      "example": "[REDACTED]"
     },
     {
       "name": "account_type",
@@ -27,7 +27,7 @@
       "required": true,
       "sensitive": false,
       "enum_values": null,
-      "example": "Savings"
+      "example": "[REDACTED]"
     },
     {
       "name": "nickname",
@@ -36,7 +36,7 @@
       "required": true,
       "sensitive": false,
       "enum_values": null,
-      "example": "Vacation Fund"
+      "example": "[REDACTED]"
     },
     {
       "name": "initial_deposit",
@@ -823,7 +823,7 @@
     "notes": "Contains at least one irreversible step; unattended replay is gated on review."
   },
   "provenance": {
-    "discovery_run_id": "discovery-20260826-080313-658a30",
+    "discovery_run_id": "discovery-[REDACTED]-658a30",
     "provider": "anthropic",
     "model": "claude-opus-5",
     "recorded_at": "2026-08-26T08:04:03.705639Z",

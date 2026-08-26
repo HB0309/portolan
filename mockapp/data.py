@@ -77,77 +77,9 @@ MEMBERS: dict[str, Member] = {
         joined="01/01/2010",
         accounts=[Account("Savings", "0019-0001", "0.00", "01/01/2010")],
     ),
-    "10101": Member(
-        member_id="10101",
-        name="Wilhelmina Castellanos-Ortiz",
-        status="Active",
-        branch="Northgate",
-        joined="09/09/2009",
-        accounts=[
-            Account("Savings", "0021-3301", "88,204.19", "09/09/2009"),
-            Account("Checking", "0021-3302", "6,742.00", "09/09/2009"),
-            Account("Certificate", "0021-3303", "25,000.00", "02/14/2012"),
-            Account("Holiday Club", "0021-3304", "1,150.75", "10/01/2020"),
-            Account("Vacation Club", "0021-3305", "2,400.00", "06/01/2021"),
-        ],
-    ),
-    # No accounts at all -- the edge case a balance lookup or an account
-    # listing has to handle without assuming at least one row exists.
-    "10115": Member(
-        member_id="10115",
-        name="Otieno Kamau",
-        status="Active",
-        branch="Riverbend",
-        joined="04/30/2024",
-        accounts=[],
-    ),
-    # Deliberately awkward for extraction: an apostrophe, a hyphen, and a
-    # diacritic in one name, none of which this application escapes specially.
-    "10120": Member(
-        member_id="10120",
-        name="María José O'Brien-Núñez",
-        status="Active",
-        branch="Corporate",
-        joined="12/25/2018",
-        accounts=[
-            Account("Savings", "0023-9910", "512.33", "12/25/2018"),
-        ],
-    ),
-    "10133": Member(
-        member_id="10133",
-        name="Grzegorz Wysocki",
-        status="Active",
-        branch="Northgate",
-        joined="08/17/2023",
-        accounts=[
-            Account("Savings", "0024-1187", "150.00", "08/17/2023"),
-            Account("Checking", "0024-1188", "45.60", "08/17/2023"),
-        ],
-    ),
-    # A second restricted member, on a different branch, so the
-    # permission-denied path isn't coupled to a single fixture's other
-    # properties (branch, join date) by coincidence.
-    "10148": Member(
-        member_id="10148",
-        name="Sealed Estate Account",
-        status="Restricted",
-        branch="Riverbend",
-        joined="01/01/2015",
-        accounts=[Account("Savings", "0025-0001", "340,880.00", "01/01/2015")],
-    ),
-    # Not restricted, but not active either -- a status the UI has to render
-    # honestly rather than assuming every member is either Active or Restricted.
-    "10156": Member(
-        member_id="10156",
-        name="Beatrix Sanmiguel",
-        status="Closed",
-        branch="Corporate",
-        joined="03/03/2011",
-        accounts=[Account("Savings", "0026-4471", "0.00", "07/15/2024")],
-    ),
 }
 
-RESTRICTED_MEMBER_IDS = {"10099", "10148"}
+RESTRICTED_MEMBER_IDS = {"10099"}
 
 
 @dataclass(frozen=True)

@@ -31,6 +31,12 @@ ANTHROPIC_API_KEY=sk-ant-...      # primary discovery driver
 OPENAI_API_KEY=sk-...             # optional second provider
 ```
 
+Only have an OpenAI key? Set `CUA_PROVIDER=openai` in `.env` (also update
+`OPENAI_MODEL` to a model with tool calling, e.g. `gpt-4o`) and every command
+below works unchanged -- no need to pass `--provider` by hand each time. The
+`--provider` flag on any command always overrides this default if you want to
+mix providers in one session.
+
 ### Running without a model
 
 Discovery needs an API key. Everything else does not, and there is a scripted
