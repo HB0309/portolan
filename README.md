@@ -1,4 +1,6 @@
-# Computer-use automation for applications with no API
+# Portolan
+
+**Computer-use automation for applications with no API.**
 
 An LLM works out how to complete a task inside a legacy UI. The successful run
 is recorded as a typed, reusable capability. That capability then replays
@@ -7,6 +9,51 @@ to whatever called it.
 
 > The model discovers. The artifact becomes a reusable capability.
 > Deterministic replay is how the AI agent invokes it in production.
+
+## Why it is called Portolan
+
+A [portolan chart](https://en.wikipedia.org/wiki/Portolan_chart) was not drawn by
+surveying a coastline. It was compiled from the bearings and distances of voyages
+that had actually been sailed. One ship worked the route out the hard way; every
+ship afterward sailed it from the chart.
+
+That is the architecture. Discovery is the voyage, expensive and uncertain and
+done once. The capability artifact is the chart. Replay is every voyage after,
+which needs no navigator because the route is already written down.
+
+## Why I built it
+
+I kept running into the same idea from two directions: everyone wants to point an
+LLM at a screen and have it click things, and nobody wants a model in the loop of
+something that has to run correctly a thousand times a day. Those seemed
+reconcilable if the model only had to be right once. I wanted to find out whether
+that actually holds up when you build it, so I built it.
+
+It turned out to be a much more interesting problem than I expected, mostly
+because of everything that happens after the model succeeds: how you record a
+step so it survives the page changing, what you do when a control is ambiguous,
+and who is allowed to decide that an action is safe. Those questions are what the
+design write-up is really about.
+
+## The problem this solves
+
+Plenty of systems that a business depends on have a user interface and no API.
+The obvious move is to point an LLM at the screen, but running a model on every
+execution is slow, costly, and non-deterministic, which is exactly what you
+cannot accept for something that has to run correctly thousands of times.
+
+So the model runs once. What it learns becomes an artifact, and the artifact is
+what runs in production:
+
+- **Steps record semantics, not selectors.** A step stores an element's
+  accessible name and role, never a CSS selector or pixel coordinates, because
+  those are precisely what break when a UI shifts.
+- **Ambiguity is a failure, not a guess.** On replay each descriptor resolves
+  through a seven-rung ladder and stops at the first rung yielding exactly one
+  candidate. More than one match at the winning rung fails the step.
+- **The policy gate sits between the executor and the surface, not in the
+  prompt.** An unsafe action is refused by the system regardless of what the
+  model decided, and irreversible steps escalate to a human.
 
 The design write-up is in [REPORT.md](REPORT.md). Decisions and their trade-offs
 are logged in [docs/DECISIONS.md](docs/DECISIONS.md).

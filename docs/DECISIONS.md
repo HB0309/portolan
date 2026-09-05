@@ -29,7 +29,7 @@ artifacts cross a process boundary as JSON anyway.
 stand-in for a credit-union servicing console, rather than a public sandbox site.
 
 **Why.** Three requirements are unreachable against a site we do not control.
-First, replay has to be exercised against a replay that hits an error or exceptional state
+First, replay has to be exercised against error and exceptional states
 — we need to inject a session timeout, a permission denial, a validation error
 on demand. Second, the interesting failure modes here are runtime
 conditions, not layout drift, and only a controlled app can produce them
@@ -57,7 +57,7 @@ evidence, but they are not the targeting mechanism.
 **Why.** The environment has hundreds of tenants running the same vendor product
 with different branding. Pixel coordinates do not survive a re-theme; role and
 accessible name do. The accessibility tree is also the one representation that
-exists on all three surface types that matter — modern web, legacy web, and
+exists across all three surface types that matter — modern web, legacy web, and
 native desktop — which makes it the right abstraction to build the artifact
 schema on.
 
@@ -167,9 +167,8 @@ descriptor — usually an additional anchor — which is the outcome we want any
 **Decision.** Everything runs in one process. The operator console is a small
 FastAPI app in the same process as the run it serves.
 
-**Why.** Scaling infrastructure is not what this project demonstrates, not building
-infrastructure, and prematurely adding it would obscure the parts being
-evaluated. The abstractions are shaped so that the work *could* be distributed —
+**Why.** Scaling infrastructure is not what this project is demonstrating, and
+prematurely adding it would obscure the parts that are. The abstractions are shaped so that the work *could* be distributed —
 capabilities are serialisable, runs are identified, evidence is filesystem-backed
 — without any of that being built.
 
@@ -202,8 +201,8 @@ of tool calls instead of calling a model.
 
 **Why.** Two reasons, both practical. It lets the discovery loop, the recorder,
 and the artifact emission be tested deterministically in CI with no key and no
-network. And it gives a reviewer without an API key a way to run the full demo
-path, . It is not a substitute for the
+network. And it gives a reader without an API key a way to run the full demo
+path. It is not a substitute for the
 real run — the committed evidence includes a genuine model-driven discovery.
 
 **Cost.** A scripted run proves the plumbing, not the agent's judgment. The
@@ -813,7 +812,7 @@ port, independently:
    by hand.
 3. `cua/policy/engine.py`'s origin allowlist is loaded once from
    `policy.yaml`, which lists the mock app's origin explicitly for a
-   reviewer cloning fresh -- correct for that case, but with nothing to keep
+   someone cloning fresh -- correct for that case, but with nothing to keep
    it in sync with a locally-changed port, navigating to the new origin was
    DENIED outright rather than reaching the action being tested.
 4. The integration tests hardcoded `127.0.0.1:8080` for both "is the app
@@ -889,7 +888,7 @@ plausible-looking findings were deliberately left alone.
 - Schema-level enforcement of "no caller literal reaches a string field" (a
   `field_validator` replacing the three `_scrub_text` call sites) is a real,
   defensible idea, but a bigger and riskier change to a safety-critical
-  mechanism than the rest of this pass warranted than the rest of this pass -- left as a
+  mechanism than the rest of this pass warranted -- left as a
   documented option, not attempted here.
 - `SESSION_UNRECOVERABLE` (never produced), `ControlToken.human_action_count`
   (write-only, duplicating `len(SessionManager.human_actions)`), and

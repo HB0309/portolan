@@ -20,16 +20,16 @@ The thesis, which every design decision is measured against:
 
 1. **No secrets in the repo.** Keys live in `.env`, which is gitignored. Check
    `git status` and grep the diff before every commit.
-1. **Replay never calls a model.** This is asserted in code
+2. **Replay never calls a model.** This is asserted in code
    (`ReplayResult.provider_calls` must be 0), not left as a convention. If you
    are tempted to add an LLM call to the replay path, you have misunderstood the
    project.
-2. **Never guess on an ambiguous element match.** More than one candidate at the
+3. **Never guess on an ambiguous element match.** More than one candidate at the
    winning resolution rung is a failure or an escalation, never a "pick the
    first one." Clicking the wrong "Transfer" in a bank is unrecoverable.
-3. **Business outcomes are not failures.** "No such member" is a legitimate
+4. **Business outcomes are not failures.** "No such member" is a legitimate
    answer the caller needs. Keep the three result states distinct.
-4. **Artifacts never store caller data as literals.** Values that came from a
+5. **Artifacts never store caller data as literals.** Values that came from a
    declared input are recorded as `{{param.x}}` references. There is a test
    guarding this; do not weaken it.
 
@@ -68,12 +68,13 @@ Add `--provider anthropic` to record the discovery runs with a real model.
 
 Recorded with rationale in `docs/DECISIONS.md`. Do not silently reverse one; if
 a decision turns out wrong, amend that file and say why. Every decision must be
-defensible in a one-sentence answer, because a later read is a
+defensible in a one-sentence answer, because the follow-up round is a
 conversation about the design.
 
 ## Current state
 
-Design decisions and their trade-offs are logged in `docs/DECISIONS.md`.
+Design decisions and their trade-offs are logged in `docs/DECISIONS.md`. Add an
+entry whenever you make a call someone could reasonably have made differently.
 
 ## Running things
 

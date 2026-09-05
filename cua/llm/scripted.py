@@ -4,8 +4,7 @@ It exists for two practical reasons, and is not pretending to a third.
 
 The discovery loop, the policy gate, the recorder and the artifact emission all
 need to be testable deterministically, in CI, with no key and no network. And a
-reviewer without an API key needs a way to run the demo path end to end, which
-.
+reader without an API key needs a way to run the demo path end to end.
 
 What it does **not** do is show that the agent can work anything out. A scripted
 run proves the plumbing; only a real model-driven run proves discovery, and the

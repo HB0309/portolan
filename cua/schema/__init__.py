@@ -1,7 +1,7 @@
 """Typed contracts for capabilities, results, and tenant overlays.
 
 Everything the rest of the system passes around is defined here. The schema is
-deliberately the first thing to read first: it encodes most of the
+deliberately the first thing to read: it encodes most of the
 design decisions in a form that is checked at runtime rather than described in
 a comment.
 """

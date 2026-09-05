@@ -332,14 +332,14 @@ scope here; in production those would come from a secret store, and the
 re-authentication policy deliberately routes to a human rather than letting this
 process hold them.
 
-## 7. Cuts
+## 7. What I left out on purpose
 
-Deliberately left out, with the seam kept real:
+Deliberately not built, with the seam kept real so it could be:
 
 - **Desktop surface.** `Surface` ABC plus a documented UIA/AX mapping. Not built.
 - **Multi-tenant infrastructure.** Overlays and resolution are built and
   demonstrated; a registry service, per-tenant config store, and scheduling are
-  not. This project explicitly does not reward that plumbing.
+  not. That plumbing is deliberately out of scope here.
 - **Real co-browsing console.** Control transfer is real; the UI is one polling
   page.
 - **Credential management.** Out of scope; noted in §6.
